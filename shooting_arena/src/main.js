@@ -25,8 +25,8 @@ const player = {
   currentFrame: 0,
   frameCount: 4, // Number of frames in your sprite sheet
   animationSpeed: 0.1,
-  direction: 'down', // 'up', 'down', 'left', 'right'
-  isMoving: false
+  direction: "down", // 'up', 'down', 'left', 'right'
+  isMoving: false,
 };
 
 // Create player sprite (using SVG for testing)
@@ -103,7 +103,7 @@ const createPlayerSprite = () => {
     map: texture,
     transparent: true
   });
-  
+
   player.sprite = new THREE.Sprite(spriteMaterial);
   player.sprite.scale.set(3, 3, 1);
   player.sprite.position.set(0, 1.5, 0); // Adjust height as needed
@@ -159,25 +159,25 @@ const keys = {
   ArrowRight: false,
 };
 
-window.addEventListener('keydown', (e) => {
+window.addEventListener("keydown", (e) => {
   if (keys.hasOwnProperty(e.key)) {
     keys[e.key] = true;
     player.isMoving = true;
-    
+
     // Update direction
-    if (e.key === 'ArrowUp') player.direction = 'up';
-    else if (e.key === 'ArrowDown') player.direction = 'down';
-    else if (e.key === 'ArrowLeft') player.direction = 'left';
-    else if (e.key === 'ArrowRight') player.direction = 'right';
+    if (e.key === "ArrowUp") player.direction = "up";
+    else if (e.key === "ArrowDown") player.direction = "down";
+    else if (e.key === "ArrowLeft") player.direction = "left";
+    else if (e.key === "ArrowRight") player.direction = "right";
   }
 });
 
-window.addEventListener('keyup', (e) => {
+window.addEventListener("keyup", (e) => {
   if (keys.hasOwnProperty(e.key)) {
     keys[e.key] = false;
-    
+
     // Check if any movement key is still pressed
-    player.isMoving = Object.values(keys).some(value => value === true);
+    player.isMoving = Object.values(keys).some((value) => value === true);
   }
 });
 
@@ -217,7 +217,7 @@ function updatePlayerPosition() {
       player.direction = moveX < 0 ? 'left' : 'right';
     }
   }
-  
+
   // Update sprite position to match player position
   if (player.sprite) {
     player.sprite.position.x = player.position.x;
@@ -262,19 +262,18 @@ function updateSpriteAnimation() {
 
 // Add coordinate axes helper
 function addCoordinateIndicators() {
-  
   // Add position display to screen
-  const positionDisplay = document.createElement('div');
-  positionDisplay.id = 'position-display';
-  positionDisplay.style.position = 'absolute';
-  positionDisplay.style.top = '10px';
-  positionDisplay.style.left = '10px';
-  positionDisplay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
-  positionDisplay.style.color = 'white';
-  positionDisplay.style.padding = '10px';
-  positionDisplay.style.fontFamily = 'monospace';
-  positionDisplay.style.fontSize = '16px';
-  positionDisplay.style.borderRadius = '5px';
+  const positionDisplay = document.createElement("div");
+  positionDisplay.id = "position-display";
+  positionDisplay.style.position = "absolute";
+  positionDisplay.style.top = "10px";
+  positionDisplay.style.left = "10px";
+  positionDisplay.style.backgroundColor = "rgba(0, 0, 0, 0.7)";
+  positionDisplay.style.color = "white";
+  positionDisplay.style.padding = "10px";
+  positionDisplay.style.fontFamily = "monospace";
+  positionDisplay.style.fontSize = "16px";
+  positionDisplay.style.borderRadius = "5px";
   document.body.appendChild(positionDisplay);
 }
 
@@ -283,7 +282,7 @@ addCoordinateIndicators();
 
 // Update the position display in the animate function
 function updatePositionDisplay() {
-  const display = document.getElementById('position-display');
+  const display = document.getElementById("position-display");
   if (display) {
     display.textContent = `Position: 
     X: ${player.position.x.toFixed(2)} 
@@ -303,9 +302,8 @@ function animate() {
 renderer.setAnimationLoop(animate);
 
 // Handle window resize
-window.addEventListener('resize', () => {
+window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
-
