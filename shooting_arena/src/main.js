@@ -25,22 +25,22 @@ const player = {
   currentFrame: 0,
   frameCount: 4, // Number of frames in your sprite sheet
   animationSpeed: 0.1,
-  direction: 'down', // 'up', 'down', 'left', 'right'
-  isMoving: false
+  direction: "down", // 'up', 'down', 'left', 'right'
+  isMoving: false,
 };
 
 // Create player sprite
 const createPlayerSprite = () => {
-  const spriteMap = new THREE.TextureLoader().load('asset/player_spritesheet.png');
-  const spriteMaterial = new THREE.SpriteMaterial({ 
+  const spriteMap = new THREE.TextureLoader().load("asset/player1_sprite.png");
+  const spriteMaterial = new THREE.SpriteMaterial({
     map: spriteMap,
-    transparent: true 
+    transparent: true,
   });
-  
+
   player.sprite = new THREE.Sprite(spriteMaterial);
   player.sprite.scale.set(5, 5, 1);
   player.sprite.position.set(0, 3, 0); // Adjust height as needed
-  
+
   scene.add(player.sprite);
 };
 
@@ -87,25 +87,25 @@ const keys = {
   ArrowRight: false,
 };
 
-window.addEventListener('keydown', (e) => {
+window.addEventListener("keydown", (e) => {
   if (keys.hasOwnProperty(e.key)) {
     keys[e.key] = true;
     player.isMoving = true;
-    
+
     // Update direction
-    if (e.key === 'ArrowUp') player.direction = 'up';
-    else if (e.key === 'ArrowDown') player.direction = 'down';
-    else if (e.key === 'ArrowLeft') player.direction = 'left';
-    else if (e.key === 'ArrowRight') player.direction = 'right';
+    if (e.key === "ArrowUp") player.direction = "up";
+    else if (e.key === "ArrowDown") player.direction = "down";
+    else if (e.key === "ArrowLeft") player.direction = "left";
+    else if (e.key === "ArrowRight") player.direction = "right";
   }
 });
 
-window.addEventListener('keyup', (e) => {
+window.addEventListener("keyup", (e) => {
   if (keys.hasOwnProperty(e.key)) {
     keys[e.key] = false;
-    
+
     // Check if any movement key is still pressed
-    player.isMoving = Object.values(keys).some(value => value === true);
+    player.isMoving = Object.values(keys).some((value) => value === true);
   }
 });
 
@@ -123,13 +123,13 @@ function updatePlayerPosition() {
   if (keys.ArrowRight) {
     player.position.x += player.speed;
   }
-  
+
   // Update sprite position to match player position
   if (player.sprite) {
     player.sprite.position.x = player.position.x;
     player.sprite.position.z = player.position.z;
   }
-  
+
   // Update camera to follow player
   camera.position.x = player.position.x;
   camera.position.z = player.position.z + 40;
@@ -139,44 +139,53 @@ function updatePlayerPosition() {
 // Update sprite animation
 function updateSpriteAnimation() {
   if (!player.sprite || !player.isMoving) return;
-  
+
   // Advance frame counter
-  player.currentFrame = (player.currentFrame + player.animationSpeed) % player.frameCount;
-  
+  player.currentFrame =
+    (player.currentFrame + player.animationSpeed) % player.frameCount;
+
   // Calculate UV offset based on direction and current frame
   let rowIndex;
   switch (player.direction) {
-    case 'down': rowIndex = 0; break;
-    case 'left': rowIndex = 1; break;
-    case 'right': rowIndex = 2; break;
-    case 'up': rowIndex = 3; break;
-    default: rowIndex = 0;
+    case "down":
+      rowIndex = 0;
+      break;
+    case "left":
+      rowIndex = 1;
+      break;
+    case "right":
+      rowIndex = 2;
+      break;
+    case "up":
+      rowIndex = 3;
+      break;
+    default:
+      rowIndex = 0;
   }
-  
+
   const frameIndex = Math.floor(player.currentFrame);
-  
+
   // Update sprite texture coordinates (assuming a 4x4 spritesheet)
   const material = player.sprite.material;
   material.map.offset.x = frameIndex / 4;
   material.map.offset.y = rowIndex / 4;
-  material.map.repeat.set(1/4, 1/4);
+  material.map.repeat.set(1 / 4, 1 / 4);
 }
 
 // Add coordinate axes helper
 function addCoordinateIndicators() {
-  
   // Add position display to screen
-  const positionDisplay = document.createElement('div');
-  positionDisplay.id = 'position-display';
-  positionDisplay.style.position = 'absolute';
-  positionDisplay.style.top = '10px';
-  positionDisplay.style.left = '10px';
-  positionDisplay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
-  positionDisplay.style.color = 'white';
-  positionDisplay.style.padding = '10px';
-  positionDisplay.style.fontFamily = 'monospace';
-  positionDisplay.style.fontSize = '16px';
-  positionDisplay.style.borderRadius = '5px';
+  const positionDisplay = document.createElement("div");
+  positionDisplay.id = "position-display";
+  positionDisplay.style.position = "absolute";
+  positionDisplay.style.top = "10px";
+  positionDisplay.style.left = "10px";
+  positionDisplay.style.backgroundColor = "rgba(0, 0, 0, 0.7)";
+  positionDisplay.style.color = "white";
+  positionDisplay.style.padding = "10px";
+  positionDisplay.style.fontFamily = "monospace";
+  positionDisplay.style.fontSize = "16px";
+  positionDisplay.style.borderRadius = "5px";
   document.body.appendChild(positionDisplay);
 }
 
@@ -185,7 +194,7 @@ addCoordinateIndicators();
 
 // Update the position display in the animate function
 function updatePositionDisplay() {
-  const display = document.getElementById('position-display');
+  const display = document.getElementById("position-display");
   if (display) {
     display.textContent = `Position: 
     X: ${player.position.x.toFixed(2)} 
@@ -205,9 +214,8 @@ function animate() {
 renderer.setAnimationLoop(animate);
 
 // Handle window resize
-window.addEventListener('resize', () => {
+window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
-
