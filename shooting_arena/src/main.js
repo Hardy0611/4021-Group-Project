@@ -1,6 +1,93 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
+// Sprite Sequence
+const sequences = {
+  /* Idling sprite sequences for facing different directions */
+  idleLeft: {
+    x: 0,
+    y: 25,
+    row: 1,
+    width: 24,
+    height: 25,
+    count: 3,
+    timing: 2000,
+    loop: false,
+  },
+  idleUp: {
+    x: 0,
+    y: 50,
+    row: 2,
+    width: 24,
+    height: 25,
+    count: 1,
+    timing: 2000,
+    loop: false,
+  },
+  idleRight: {
+    x: 0,
+    y: 75,
+    row: 3,
+    width: 24,
+    height: 25,
+    count: 3,
+    timing: 2000,
+    loop: false,
+  },
+  idleDown: {
+    x: 0,
+    y: 0,
+    row: 0,
+    width: 24,
+    height: 25,
+    count: 3,
+    timing: 2000,
+    loop: false,
+  },
+
+  /* Moving sprite sequences for facing different directions */
+  moveLeft: {
+    x: 0,
+    y: 125,
+    row: 5,
+    width: 24,
+    height: 25,
+    count: 10,
+    timing: 50,
+    loop: true,
+  },
+  moveUp: {
+    x: 0,
+    y: 150,
+    row: 6,
+    width: 24,
+    height: 25,
+    count: 10,
+    timing: 50,
+    loop: true,
+  },
+  moveRight: {
+    x: 0,
+    y: 175,
+    row: 7,
+    width: 24,
+    height: 25,
+    count: 10,
+    timing: 50,
+    loop: true,
+  },
+  moveDown: {
+    x: 0,
+    y: 100,
+    row: 4,
+    width: 24,
+    height: 25,
+    count: 10,
+    timing: 50,
+    loop: true,
+  },
+};
+
 // Setup
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(
@@ -38,7 +125,7 @@ const createPlayerSprite = () => {
   });
 
   player.sprite = new THREE.Sprite(spriteMaterial);
-  player.sprite.scale.set(5, 5, 1);
+  player.sprite.scale.set(6, 6, 1);
   player.sprite.position.set(0, 3, 0); // Adjust height as needed
 
   scene.add(player.sprite);
@@ -139,6 +226,11 @@ function updatePlayerPosition() {
 // Update sprite animation
 function updateSpriteAnimation() {
   if (!player.sprite || !player.isMoving) return;
+  //   if (!player.sprite) return;
+
+  const currentSequence = player.isMoving
+    ? sequences[`move${capitalize(player.direction)}`]
+    : sequences[`idle${capitalize(player.direction)}`];
 
   // Advance frame counter
   player.currentFrame =
@@ -170,6 +262,50 @@ function updateSpriteAnimation() {
   material.map.offset.x = frameIndex / 4;
   material.map.offset.y = rowIndex / 4;
   material.map.repeat.set(1 / 4, 1 / 4);
+}
+
+// function updateSpriteAnimation(time) {
+//   if (!player.sprite) return;
+
+//   const currentSequence = player.isMoving
+//     ? sequences[`move${capitalize(player.direction)}`]
+//     : sequences[`idle${capitalize(player.direction)}`];
+
+//   // Initialize lastUpdate if it's the first call
+//   if (lastUpdate == 0) lastUpdate = time;
+
+//   // Check if enough time has passed to update the frame
+//   if (time - lastUpdate >= currentSequence.timing) {
+//     if (
+//       !currentSequence.loop &&
+//       player.currentFrame == currentSequence.count - 1
+//     ) {
+//       return; // Stop updating if not looping
+//     }
+
+//     // Move to the next frame
+//     player.currentFrame = (player.currentFrame + 1) % currentSequence.count;
+//     lastUpdate = time; // Reset last update time
+//   }
+
+//   // Calculate UV offsets based on the current sequence
+//   const frameIndex = Math.floor(player.currentFrame);
+//   const material = player.sprite.material;
+
+//   material.map.offset.x =
+//     currentSequence.x / spriteSheetWidth +
+//     (frameIndex / currentSequence.count) *
+//       (currentSequence.width / spriteSheetWidth);
+//   material.map.offset.y = currentSequence.y / spriteSheetHeight;
+//   material.map.repeat.set(
+//     currentSequence.width / spriteSheetWidth,
+//     currentSequence.height / spriteSheetHeight
+//   );
+// }
+
+// Utility function to capitalize the first letter
+function capitalize(string) {
+  return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
 // Add coordinate axes helper
