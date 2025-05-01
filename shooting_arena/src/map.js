@@ -3,15 +3,30 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 const Map = function () {
   var map = null;
+  var boundingBoxArray = [];
+  var mapObjectArray = [];
+
   const createMap = function (scene) {
     // Load 3D map model
-    var map;
     const loader = new GLTFLoader();
     loader.load(
       "asset/map.glb",
       function (glb) {
         map = glb;
         scene.add(glb.scene);
+
+        // Create BB for Collision Detection
+        map.scene.traverse((child) => {
+          if (child.isMesh) {
+            mapObjectArray.push(child);
+            var boundingBox = new THREE.Box3(
+              new THREE.Vector3(),
+              new THREE.Vector3()
+            );
+            boundingBox.setFromObject(child);
+            boundingBoxArray.push(boundingBox);
+          }
+        });
       },
       // called while loading is progressing
       function (xhr) {
@@ -33,7 +48,11 @@ const Map = function () {
     scene.add(ambientLight, dirLight);
   };
 
-  return { createMap: createMap };
+  const getBoundBoxArray = function () {
+    return boundingBoxArray;
+  };
+
+  return { createMap: createMap, getBoundBoxArray: getBoundBoxArray };
 };
 
 export default Map;

@@ -22,7 +22,8 @@ const PlayerSprite = function () {
 
   const player = {
     camera: null,
-    position: new THREE.Vector3(0, 0, 0),
+    // TO DO: Initial Position randomize
+    position: new THREE.Vector3(0, 0, 20),
     map: null,
     speed: 0.15,
     sprite: null,
@@ -31,12 +32,7 @@ const PlayerSprite = function () {
     direction: "idle", // 'up', 'down', 'left', 'right', 'idle
   };
 
-  const keys = {
-    ArrowUp: false,
-    ArrowDown: false,
-    ArrowLeft: false,
-    ArrowRight: false,
-  };
+  var boundingBox = null;
 
   const createPlayer = function (spriteTexture, scene, camera) {
     // Create Player
@@ -56,7 +52,8 @@ const PlayerSprite = function () {
 
     player.sprite = new THREE.Sprite(spriteMaterial);
     player.sprite.scale.set(2, 2, 1);
-    player.sprite.position.set(0, 3, 0); // Adjust height as needed
+    // TO DO: Initial Position randomize
+    player.sprite.position.set(0, 1.5, 20); // Adjust height as needed
 
     scene.add(player.sprite);
 
@@ -64,12 +61,14 @@ const PlayerSprite = function () {
     player.camera = camera;
     player.camera.position.set(0, 10, 10);
     player.camera.lookAt(player.position);
+
+    // Create Bounding box
+    boundingBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+    boundingBox.setFromObject(player.sprite);
   };
 
   // This function sets the sprite sequence
   const setSequence = function (newSequence) {
-    console.log("change sequence");
-    console.log(newSequence);
     index = 0;
     lastUpdate = 0;
     player.sequence = newSequence;
@@ -100,7 +99,6 @@ const PlayerSprite = function () {
   const stop = function (dir) {
     if (player.direction == dir) {
       player.direction = "idle";
-      console.log("make idle");
       switch (dir) {
         case "left":
           setSequence(sequences.idleLeft);
@@ -119,7 +117,7 @@ const PlayerSprite = function () {
   };
 
   // Update player position
-  const updatePlayerPosition = function () {
+  const updatePlayerPosition = function (objectCollide) {
     if (player.direction == "idle") return;
     // Store previous position for comparison
     // const previousPosition = player.position.clone();
@@ -141,6 +139,11 @@ const PlayerSprite = function () {
       case "down":
         moveZ += player.speed;
         break;
+    }
+
+    if (objectCollide.collide && player.direction == objectCollide.direction) {
+      if (player.direction == "left" || player.direction == "right") moveX = 0;
+      else moveZ = 0;
     }
 
     // Normalize diagonal movement so it's not faster
@@ -172,6 +175,13 @@ const PlayerSprite = function () {
       player.sprite.position.z = player.position.z;
     }
 
+    // Update bounding box
+    if (boundingBox) {
+      boundingBox
+        .copy(player.sprite.geometry.boundingBox)
+        .applyMatrix4(player.sprite.matrixWorld);
+    }
+
     // Update camera to follow player (with smoother movement)
     const cameraTargetX = player.position.x;
     const cameraTargetZ = player.position.z + 15; // Reduced camera distance
@@ -200,6 +210,10 @@ const PlayerSprite = function () {
     return player.position;
   };
 
+  const getBoundBox = function () {
+    return boundingBox;
+  };
+
   return {
     createPlayer: createPlayer,
     move: move,
@@ -207,6 +221,7 @@ const PlayerSprite = function () {
     updatePlayerPosition: updatePlayerPosition,
     updatePlayerAnimation: updatePlayerAnimation,
     getPlayerPosition: getPlayerPosition,
+    getBoundBox: getBoundBox,
   };
 };
 
