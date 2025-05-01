@@ -3,78 +3,149 @@ import session from "express-session";
 import bcrypt from "bcrypt";
 import { createServer } from "http";
 import { Server } from "socket.io";
-import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import fs from "fs";
 
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer);
 
+const onlineUsers = {};
+
 // Middleware for parsing JSON
 app.use(express.json());
 
 // Session middleware
-app.use(
-  session({
-    secret: "PUBGarena", // Replace with a secure key
-    resave: false,
-    saveUninitialized: false,
-    rolling: true,
-    cookie: { maxAge: 300000 }, // Session expires in 5 minutes
-  })
-);
+const gameSession = session({
+  secret: "PUBGarena", // Replace with a secure key
+  resave: false,
+  saveUninitialized: false,
+  rolling: true,
+  cookie: { maxAge: 300000 }, // Session expires in 5 minutes
+});
+app.use(gameSession);
 
-// In-memory user database
-const users = [];
+io.use((socket, next) => {
+  gameSession(socket.request, {}, next);
+});
 
-// Login route
-app.post("/api/login", (req, res) => {
+// Handle the registration of new users
+app.post("/register", async (req, res) => {
   const { username, password } = req.body;
-  const user = users.find((u) => u.username === username);
 
-  if (user && bcrypt.compareSync(password, user.password)) {
-    req.session.user = { username }; // Save user info in session
-    res.json({ success: true, message: "Login successful" });
+  const users = JSON.parse(fs.readFileSync("../data/users.json", "utf-8"));
+
+  // Check valid input
+  if (!username || !password) {
+    res.json({ status: "error", error: "All fields are required." });
+    return;
+  }
+  if (!containWordCharsOnly(username)) {
+    res.json({
+      status: "error",
+      error: "Username can only contain underscore, letters or numbers.",
+    });
+    return;
+  }
+  if (users[username]) {
+    res.json({ status: "error", error: "Username already exists." });
+    return;
+  }
+
+  // Hash the password
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  // Create a new user
+  users[username] = {
+    username: username,
+    password: hashedPassword,
+  };
+
+  fs.writeFileSync("data/users.json", JSON.stringify(users, null, "  "));
+
+  res.status(201).json({ message: "User registered successfully" });
+});
+
+// Handle user login
+app.post("/login", async (req, res) => {
+  const { username, password } = req.body;
+
+  const users = JSON.parse(fs.readFileSync("../data/users.json", "utf-8"));
+  // Check password
+  const isPasswordValid = await bcrypt.compare(
+    password,
+    users[username].password
+  );
+  if (!isPasswordValid) {
+    res.json({ status: "error", error: "Invalid username or password." });
+    return;
+  }
+
+  // Store user in session
+  req.session.user = users[username];
+  res.json({ status: "ok" });
+});
+
+// Handle validation of session
+app.get("/validate", (req, res) => {
+  const user = req.session.user;
+  if (user) {
+    res.json({ status: "ok", user: user });
   } else {
-    res.status(401).json({ success: false, message: "Invalid credentials" });
+    res.json({ status: "error", error: "Session expired." });
   }
 });
 
-// Logout route
-app.post("/api/logout", (req, res) => {
-  req.session.destroy(() => {
-    res.json({ success: true, message: "Logged out" });
-  });
+// Handle user logout
+app.get("/logout", (req, res) => {
+  if (req.session.user) {
+    delete req.session.user;
+    res.json({ status: "ok" });
+  }
 });
 
-// WebSocket connection
+// Handle websocket connections
 io.on("connection", (socket) => {
-  console.log("A user connected");
+  const user = socket.request.session.user;
+  if (user) {
+    // init user states and store in onlineUsers
+    onlineUsers[user.username] = {
+      name: user.username,
+      position: { x: 0, y: 0 },
+      direction: "idle",
+      weapon: "none",
+      health: 100,
+    };
+    console.log(onlineUsers);
 
-  // Handle custom WebSocket events
-  socket.on("message", (data) => {
-    console.log("Message received:", data);
-    socket.broadcast.emit("message", data); // Broadcast to other clients
+    // Broadcast to all clients that a new user has connected
+    io.emit("add user", JSON.stringify(user));
+  }
+
+  // Handle user disconnection
+  socket.on("disconnect", () => {
+    if (user) {
+      delete onlineUsers[user.username];
+      console.log(onlineUsers);
+      // Broadcast to all clients that a user has disconnected
+      io.emit("remove user", JSON.stringify(user));
+    }
   });
 
-  socket.on("disconnect", () => {
-    console.log("A user disconnected");
+  // Handle update user movement
+  socket.on("updateUser", (data) => {
+    const { username, position, direction, weapon, health } = JSON.parse(data);
+    if (onlineUsers[username]) {
+      onlineUsers[username].position = position;
+      onlineUsers[username].direction = direction;
+      onlineUsers[username].weapon = weapon;
+      onlineUsers[username].health = health;
+      io.emit("updateUser", JSON.stringify(onlineUsers)); // Update all users
+    }
   });
 });
 
-// Serve the Vite frontend in production
-if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../dist")));
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "../dist/index.html"));
-  });
-}
-
-// Start the server
-const PORT = process.env.PORT || 3000;
-httpServer.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+// serving the backend server
+const port = process.env.PORT || 3000;
+httpServer.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
 });
