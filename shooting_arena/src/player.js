@@ -117,7 +117,7 @@ const PlayerSprite = function () {
   };
 
   // Update player position
-  const updatePlayerPosition = function (objectCollide) {
+  const updatePlayerPosition = function (collideObjects) {
     if (player.direction == "idle") return;
     // Store previous position for comparison
     // const previousPosition = player.position.clone();
@@ -129,21 +129,39 @@ const PlayerSprite = function () {
     switch (player.direction) {
       case "left":
         moveX -= player.speed;
+        if (collideObjects.length !== 0) {
+          if (collideObjects.some((obj) => obj === "left")) {
+            moveX = 0;
+          }
+        }
         break;
+
       case "up":
         moveZ -= player.speed;
+        if (collideObjects.length !== 0) {
+          if (collideObjects.some((obj) => obj === "up")) {
+            moveZ = 0;
+          }
+        }
         break;
+
       case "right":
         moveX += player.speed;
+        if (collideObjects.length !== 0) {
+          if (collideObjects.some((obj) => obj === "right")) {
+            moveX = 0;
+          }
+        }
         break;
+
       case "down":
         moveZ += player.speed;
+        if (collideObjects.length !== 0) {
+          if (collideObjects.some((obj) => obj === "down")) {
+            moveZ = 0;
+          }
+        }
         break;
-    }
-
-    if (objectCollide.collide && player.direction == objectCollide.direction) {
-      if (player.direction == "left" || player.direction == "right") moveX = 0;
-      else moveZ = 0;
     }
 
     // Normalize diagonal movement so it's not faster
@@ -214,6 +232,10 @@ const PlayerSprite = function () {
     return boundingBox;
   };
 
+  const getPlayerDirection = function () {
+    return player.direction;
+  };
+
   return {
     createPlayer: createPlayer,
     move: move,
@@ -222,6 +244,7 @@ const PlayerSprite = function () {
     updatePlayerAnimation: updatePlayerAnimation,
     getPlayerPosition: getPlayerPosition,
     getBoundBox: getBoundBox,
+    getPlayerDirection: getPlayerDirection,
   };
 };
 

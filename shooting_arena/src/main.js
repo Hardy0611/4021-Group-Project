@@ -77,57 +77,53 @@ function updatePositionDisplay() {
 }
 
 // Modify the animate function to include position display update
-function animate(now, objectCollide) {
+function animate(now, collideObjects) {
   playerSprite.updatePlayerAnimation(now);
-  playerSprite.updatePlayerPosition(objectCollide);
+  playerSprite.updatePlayerPosition(collideObjects);
   updatePositionDisplay(); // Add this line
   renderer.render(scene, camera);
 }
 
+var objectBBStatus = [];
+
 function checkObjectCollision() {
+  var collideObjects = [];
   if (map && playerSprite) {
     var mapBB = map.getBoundBoxArray();
     var playerBB = playerSprite.getBoundBox();
-    if (!playerBB || mapBB.length == 0) return { collide: false };
+    if (!playerBB || mapBB.length == 0) {
+      for (let i = 0; i < mapBB.length; i++)
+        objectBBStatus[i].previousCollide = false;
+      return [];
+    }
+    if (objectBBStatus.length == 0 && mapBB.length != 0) {
+      for (let i = 0; i < mapBB.length; i++) {
+        objectBBStatus.push({
+          previousCollide: false,
+          previousKeyPressCollide: null,
+        });
+      }
+    }
     for (let i = 0; i < mapBB.length; i++) {
       if (playerBB.intersectsBox(mapBB[i])) {
-        console.log(playerBB);
-        if (
-          playerBB.min.x <= mapBB[i].max.x &&
-          playerBB.max.x >= mapBB[i].max.x &&
-          playerBB.min.z >= mapBB[i].min.z &&
-          playerBB.min.z <= mapBB[i].max.z
-        ) {
-          return { collide: true, direction: "left" };
-        } else if (
-          playerBB.max.x >= mapBB[i].min.x &&
-          playerBB.min.x <= mapBB[i].min.x &&
-          playerBB.min.z >= mapBB[i].min.z &&
-          playerBB.min.z <= mapBB[i].max.z
-        ) {
-          return { collide: true, direction: "right" };
-        } else if (
-          playerBB.max.z >= mapBB[i].min.z &&
-          // playerBB.max.z <= (mapBB[i].min.z + mapBB[i].max.z) / 2 &&
-          (playerBB.max.x >= mapBB[i].min.x || playerBB.min.x <= mapBB[i].max.x)
-        ) {
-          return { collide: true, direction: "up" };
-        } else if (
-          playerBB.max.z <= mapBB[i].max.z &&
-          // playerBB.min.z >= (mapBB[i].min.z + mapBB[i].max.z) / 2 &&
-          (playerBB.max.x >= mapBB[i].min.x || playerBB.min.x <= mapBB[i].max.x)
-        ) {
-          return { collide: true, direction: "down" };
+        if (!objectBBStatus[i].previousCollide) {
+          objectBBStatus[i].previousKeyPressCollide =
+            playerSprite.getPlayerDirection();
         }
+        objectBBStatus[i].previousCollide = true;
+        collideObjects.push(objectBBStatus[i].previousKeyPressCollide);
+      } else {
+        objectBBStatus[i].previousCollide = false;
       }
     }
   }
-  return { collide: false };
+
+  return collideObjects;
 }
 
 renderer.setAnimationLoop((now) => {
-  var objectCollide = checkObjectCollision();
-  animate(now, objectCollide);
+  var collideObjects = checkObjectCollision();
+  animate(now, collideObjects);
 });
 
 // Handle window resize
