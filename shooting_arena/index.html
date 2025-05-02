@@ -39,10 +39,31 @@
           </form>
       </div>
   </div>
-  <script type="module" src="/src/main.js"></script>
+  <!-- <script type="module" src="/src/main.js"></script> -->
   <script type="module" src="src/registration.js"></script>
   <script type="module" src="src/authentication.js"></script>
   <script type="module" src="src/ui.js"></script>
   <script type="module" src="src/socket.js"></script>
+  <script type="module">
+    import UI from './src/ui.js';
+    import { SignInForm } from './src/ui.js';
+    import Authentication from './src/authentication.js';
+    import Socket from './src/socket.js';
+    $(function() {
+      //Init the UI
+      UI.initialize();
+      // Validate the signin
+      Authentication.validate(
+          () => {
+              SignInForm.hide();
+              UserPanel.update(Authentication.getUser());
+              UserPanel.show();
+
+              Socket.connect("http://localhost:3000");
+          },
+          () => { SignInForm.show(); }
+      );
+    });
+    </script>
   </body>
 </html>

@@ -1,82 +1,76 @@
-const Authentication = (function() {
-    // This stores the current signed-in user
-    let user = null;
+const Authentication = (function () {
+  // This stores the current signed-in user
+  let user = null;
 
-    // This function gets the signed-in user
-    const getUser = function() {
-        return user;
-    }
+  // This function gets the signed-in user
+  const getUser = function () {
+    return user;
+  };
 
-    const signin = function(username, password, onSuccess, onError) {
+  const signin = function (username, password, onSuccess, onError) {
+    let userData = JSON.stringify({
+      username: username,
+      password: password,
+    });
 
-        //
-        // A. Preparing the user data
-        //
-        let userData = JSON.stringify({
-            "username": username,
-            "password": password
-        });
- 
-        //
-        // B. Sending the AJAX request to the server
-        //
-        fetch("/signin", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: userData
-        })
-        .then((res) => res.json())
-        .then((json) => {
-            if (json.status == "error") {
-                if (onError) onError(json.error);
-            }
-            else if (json.status == "success") {
-                user = json.user;
-                if (onSuccess) onSuccess(user);
-            }
-        });
-    };
+    fetch("http://localhost:3000/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: userData,
+    })
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.status == "error") {
+          if (onError) onError(json.error);
+        } else if (json.status == "ok") {
+          user = json.user;
+          if (onSuccess) onSuccess(user);
+        }
+      });
+  };
 
-    const validate = function(onSuccess, onError) {
-        fetch("/validate", {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json"
-            }
-        })
-        .then((res) => res.json())
-        .then((json) => {
-            if (json.status == "error") {
-                if (onError) onError(json.error);
-            }
-            else if (json.status == "success") {
-                user = json.user;
-                if (onSuccess) onSuccess(user);
-            }
-        });
-    };
+  const validate = function (onSuccess, onError) {
+    fetch("http://localhost:3000/validate", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include"
+    })
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.status == "error") {
+          if (onError) onError(json.error);
+        } else if (json.status == "ok") {
+          user = json.user;
+          if (onSuccess) onSuccess(user);
+        }
+      });
+  };
 
-    const signout = function(onSuccess, onError) {
+  const signout = function (onSuccess, onError) {
+    fetch("http://localhost:3000/logout", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include"
+    })
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.status == "error") {
+          if (onError) onError(json.error);
+        } else if (json.status == "ok") {
+          user = null;
+          if (onSuccess) onSuccess();
+        }
+      });
+  };
 
-        fetch("/signout", {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json"
-            }
-        })
-        .then((res) => res.json())
-        .then((json) => {
-            if (json.status == "error") {
-                if (onError) onError(json.error);
-            }
-            else if (json.status == "success") {
-                user = null;
-                if (onSuccess) onSuccess();
-            }
-        });
-    };
-
-    return { getUser, signin, validate, signout };
+  return { getUser, signin, validate, signout };
 })();
+
+export default Authentication;

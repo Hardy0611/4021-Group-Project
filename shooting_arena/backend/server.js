@@ -4,6 +4,12 @@ import bcrypt from "bcrypt";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import fs from "fs";
+import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const usersFile = path.join(__dirname, "data/users.json");
+
 
 const app = express();
 const httpServer = createServer(app);
@@ -13,6 +19,16 @@ const onlineUsers = {};
 
 // Middleware for parsing JSON
 app.use(express.json());
+
+app.use(cors({
+  origin: true,         // Allow all origins
+  credentials: true     // Allow cookies/session
+}));
+
+// This helper function checks whether the text only contains word characters
+function containWordCharsOnly(text) {
+  return /^\w+$/.test(text);
+}
 
 // Session middleware
 const gameSession = session({
@@ -32,7 +48,7 @@ io.use((socket, next) => {
 app.post("/register", async (req, res) => {
   const { username, password } = req.body;
 
-  const users = JSON.parse(fs.readFileSync("../data/users.json", "utf-8"));
+  const users = JSON.parse(fs.readFileSync(usersFile, "utf-8"));
 
   // Check valid input
   if (!username || !password) {
@@ -60,29 +76,31 @@ app.post("/register", async (req, res) => {
     password: hashedPassword,
   };
 
-  fs.writeFileSync("data/users.json", JSON.stringify(users, null, "  "));
+  fs.writeFileSync(usersFile, JSON.stringify(users, null, "  "));
 
-  res.status(201).json({ message: "User registered successfully" });
+  res.json({ status: "ok", message: "User registered successfully" });
 });
 
 // Handle user login
 app.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
-  const users = JSON.parse(fs.readFileSync("../data/users.json", "utf-8"));
+  const users = JSON.parse(fs.readFileSync(usersFile, "utf-8"));
+  const user = users[username];
+  if (!user) {
+    res.json({ status: "error", error: "Invalid username or password." });
+    return;
+  }
   // Check password
-  const isPasswordValid = await bcrypt.compare(
-    password,
-    users[username].password
-  );
+  const isPasswordValid = await bcrypt.compare(password, user.password);
   if (!isPasswordValid) {
     res.json({ status: "error", error: "Invalid username or password." });
     return;
   }
 
   // Store user in session
-  req.session.user = users[username];
-  res.json({ status: "ok" });
+  req.session.user = { username: user.username }; // Don't send password hash
+  res.json({ status: "ok", user: { username: user.username } });
 });
 
 // Handle validation of session
