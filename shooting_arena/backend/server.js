@@ -13,7 +13,13 @@ const usersFile = path.join(__dirname, "data/users.json");
 
 const app = express();
 const httpServer = createServer(app);
-const io = new Server(httpServer);
+const io = new Server(httpServer, {
+  cors: {
+    origin: "*", // Allow all origins
+    methods: ["GET", "POST"],
+    credentials: true, // Allow cookies/session
+  }
+});
 
 const onlineUsers = {};
 

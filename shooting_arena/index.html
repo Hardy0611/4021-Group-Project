@@ -56,8 +56,6 @@
       Authentication.validate(
           () => {
               SignInForm.hide();
-              UserPanel.update(Authentication.getUser());
-              UserPanel.show();
 
               Socket.connect("http://localhost:3000");
           },

@@ -23,8 +23,6 @@ const SignInForm = (function () {
         password,
         () => {
           hide();
-          UserPanel.update(Authentication.getUser());
-          UserPanel.show();
 
           Socket.connect("http://localhost:3000/");
 
