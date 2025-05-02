@@ -56,8 +56,10 @@
       Authentication.validate(
           () => {
               SignInForm.hide();
-
               Socket.connect("http://localhost:3000");
+              import("./src/main.js").then(() => {
+                console.log("Game module loaded");
+              });
           },
           () => { SignInForm.show(); }
       );
