@@ -135,6 +135,7 @@ io.on("connection", (socket) => {
     onlineUsers[user.username] = {
       name: user.username,
       position: { x: 0, y: 1.5, z: 20 },
+      sequence: null,
       direction: "idle",
       weapon: "none",
       health: 100,

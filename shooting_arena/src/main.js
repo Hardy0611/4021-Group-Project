@@ -3,7 +3,10 @@ import PlayerSprite from "./player.js";
 import Map from "./map.js";
 import Socket from "./socket.js";
 
-// Setup
+/**
+ * GAME INITIALIZATION
+ */
+// Setup scene and renderer
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(
   75,
@@ -11,18 +14,29 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   1000
 );
-const socket = Socket.getSocket();
-
 const renderer = new THREE.WebGLRenderer({
   canvas: document.querySelector("#map"),
 });
-
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
 
+// Create player character
 const playerSprite = PlayerSprite();
 playerSprite.createPlayer("asset/player1_sprite.png", scene, camera);
 
+// Create game map
+const map = Map();
+map.createMap(scene);
+
+// Reference to socket
+const socket = Socket.getSocket();
+
+// Store other players' sprites
+const otherPlayers = {};
+
+/**
+ * PLAYER STATE MANAGEMENT
+ */
 // Helper to get current player state
 function getPlayerState() {
   const position = playerSprite.getPlayerPosition();
@@ -30,19 +44,19 @@ function getPlayerState() {
     username: window.currentUser?.username,
     position: {
       x: position.x,
-      y: position.y, // Make sure Y position is included
+      y: position.y,
       z: position.z
     },
+    sequence: playerSprite.getPlayerSequence(),
     direction: playerSprite.getPlayerDirection(),
     weapon: playerSprite.getPlayerWeapon(),
     health: playerSprite.getPlayerHealth(),
   };
 }
 
-const map = Map();
-map.createMap(scene);
-
-// Input handling
+/**
+ * INPUT HANDLING
+ */
 const keys = {
   ArrowUp: "up",
   ArrowDown: "down",
@@ -67,9 +81,45 @@ window.addEventListener("keyup", (e) => {
   }
 });
 
-// Add coordinate axes helper
+/**
+ * MULTIPLAYER NETWORKING
+ */
+// Listen for updates from server
+Socket.onUpdateUsers((users) => {
+  // Process each connected user
+  Object.keys(users).forEach((username) => {
+    // Skip updating our own character
+    if (username === window.currentUser?.username) return;
+
+    const userState = users[username];
+    
+    // Handle new player joining
+    if (!otherPlayers[username]) {
+      const sprite = PlayerSprite();
+      sprite.createPlayer("asset/player1_sprite.png", scene, camera);
+      otherPlayers[username] = sprite;
+      console.log("New player joined:", username);
+    }
+    
+    // Update existing player state
+    otherPlayers[username].setAll(userState);
+  });
+
+  // Remove players who left the game
+  Object.keys(otherPlayers).forEach((username) => {
+    if (!users[username]) {
+      scene.remove(otherPlayers[username].sprite);
+      delete otherPlayers[username];
+      console.log("Player left:", username);
+    }
+  });
+});
+
+/**
+ * UI ELEMENTS
+ */
+// Add coordinate display to screen
 function addCoordinateIndicators() {
-  // Add position display to screen
   const positionDisplay = document.createElement("div");
   positionDisplay.id = "position-display";
   positionDisplay.style.position = "absolute";
@@ -83,44 +133,9 @@ function addCoordinateIndicators() {
   positionDisplay.style.borderRadius = "5px";
   document.body.appendChild(positionDisplay);
 }
-
-// Call this function after scene setup
 addCoordinateIndicators();
 
-// Store other players' sprites
-const otherPlayers = {};
-
-// Listen for updates from server
-Socket.onUpdateUsers((users) => {
-  // console.log("Received users from server:", users);
-  Object.keys(users).forEach((username) => {
-    if (username === window.currentUser?.username) return; // Skip self
-
-    const userState = users[username];
-    if (!otherPlayers[username]) {
-      // Create sprite for new player
-      const sprite = PlayerSprite();
-      sprite.createPlayer("asset/player1_sprite.png", scene, camera);
-      otherPlayers[username] = sprite;
-      console.log("New player joined:", username);
-    }
-    // Update position/direction
-    otherPlayers[username].setPosition(userState.position);
-    otherPlayers[username].setDirection(userState.direction);
-    // otherPlayers[username].setWeapon(userState.weapon);
-    // otherPlayers[username].setHealth(userState.health); 
-  });
-
-  // Remove players who left
-  Object.keys(otherPlayers).forEach((username) => {
-    if (!users[username]) {
-      scene.remove(otherPlayers[username].sprite);
-      delete otherPlayers[username];
-    }
-  });
-});
-
-// Update the position display in the animate function
+// Update the position display
 function updatePositionDisplay() {
   const display = document.getElementById("position-display");
   const position = playerSprite.getPlayerPosition();
@@ -132,30 +147,26 @@ function updatePositionDisplay() {
   }
 }
 
-// Modify the animate function to include position display update
-function animate(now, collideObjects) {
-  playerSprite.updatePlayerAnimation(now);
-  Object.values(otherPlayers).forEach((sprite) => {
-    sprite.updatePlayerAnimation(now);
-  });
-  playerSprite.updatePlayerPosition(collideObjects);
-  updatePositionDisplay(); // Add this line
-  renderer.render(scene, camera);
-}
-
-var objectBBStatus = [];
+/**
+ * COLLISION DETECTION
+ */
+let objectBBStatus = [];
 
 function checkObjectCollision() {
-  var collideObjects = [];
+  const collideObjects = [];
+  
   if (map && playerSprite) {
-    var mapBB = map.getBoundBoxArray();
-    var playerBB = playerSprite.getBoundBox();
-    if (!playerBB || mapBB.length == 0) {
-      for (let i = 0; i < mapBB.length; i++)
-        objectBBStatus[i].previousCollide = false;
+    const mapBB = map.getBoundBoxArray();
+    const playerBB = playerSprite.getBoundBox();
+    
+    // Skip if bounding boxes aren't ready
+    if (!playerBB || mapBB.length === 0) {
+      objectBBStatus.forEach(status => status.previousCollide = false);
       return [];
     }
-    if (objectBBStatus.length == 0 && mapBB.length != 0) {
+    
+    // Initialize collision status array if needed
+    if (objectBBStatus.length === 0 && mapBB.length !== 0) {
       for (let i = 0; i < mapBB.length; i++) {
         objectBBStatus.push({
           previousCollide: false,
@@ -163,10 +174,12 @@ function checkObjectCollision() {
         });
       }
     }
+    
+    // Check collisions with each object
     for (let i = 0; i < mapBB.length; i++) {
       if (playerBB.intersectsBox(mapBB[i])) {
         if (!objectBBStatus[i].previousCollide) {
-          objectBBStatus[i].previousKeyPressCollide =
+          objectBBStatus[i].previousKeyPressCollide = 
             playerSprite.getPlayerDirection();
         }
         objectBBStatus[i].previousCollide = true;
@@ -180,8 +193,28 @@ function checkObjectCollision() {
   return collideObjects;
 }
 
+/**
+ * GAME LOOP
+ */
+// Animation and update loop
+function animate(now, collideObjects) {
+  // Update animations
+  playerSprite.updatePlayerAnimation(now);
+  Object.values(otherPlayers).forEach((sprite) => {
+    sprite.updatePlayerAnimation(now);
+  });
+  
+  // Update physics and state
+  playerSprite.updatePlayerPosition(collideObjects);
+  updatePositionDisplay();
+  
+  // Render the scene
+  renderer.render(scene, camera);
+}
+
+// Main animation loop
 renderer.setAnimationLoop((now) => {
-  var collideObjects = checkObjectCollision();
+  const collideObjects = checkObjectCollision();
   animate(now, collideObjects);
 
   // Emit player state to server
@@ -190,6 +223,9 @@ renderer.setAnimationLoop((now) => {
   }
 });
 
+/**
+ * WINDOW EVENTS
+ */
 // Handle window resize
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
