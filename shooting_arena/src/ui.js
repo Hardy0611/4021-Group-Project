@@ -21,13 +21,14 @@ const SignInForm = (function () {
       Authentication.signin(
         username,
         password,
-        () => {
+        (user) => {
+          window.currentUser = user;
           hide();
 
-          Socket.connect("http://localhost:3000/");
-
-          import("./main.js").then(() => {
-            console.log("Game module loaded");
+          Socket.connect("http://localhost:3000/", () => {
+            import("./main.js").then(() => {
+              console.log("Game module loaded");
+            });
           });
         },
         (error) => {

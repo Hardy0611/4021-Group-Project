@@ -54,7 +54,9 @@
       UI.initialize();
       // Validate the signin
       Authentication.validate(
-          () => {
+          (user) => {
+              window.currentUser = user;
+              console.log("User authenticated: ", user);
               SignInForm.hide();
               Socket.connect("http://localhost:3000");
               import("./src/main.js").then(() => {

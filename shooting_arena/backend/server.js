@@ -142,7 +142,7 @@ io.on("connection", (socket) => {
     console.log(onlineUsers);
 
     // Broadcast to all clients that a new user has connected
-    io.emit("add user", JSON.stringify(user));
+    io.emit("updateUser", JSON.stringify(onlineUsers));
   }
 
   // Handle user disconnection
@@ -151,20 +151,15 @@ io.on("connection", (socket) => {
       delete onlineUsers[user.username];
       console.log(onlineUsers);
       // Broadcast to all clients that a user has disconnected
-      io.emit("remove user", JSON.stringify(user));
+      io.emit("updateUser", JSON.stringify(onlineUsers));
     }
   });
 
   // Handle update user movement
   socket.on("updateUser", (data) => {
-    const { username, position, direction, weapon, health } = JSON.parse(data);
-    if (onlineUsers[username]) {
-      onlineUsers[username].position = position;
-      onlineUsers[username].direction = direction;
-      onlineUsers[username].weapon = weapon;
-      onlineUsers[username].health = health;
-      io.emit("updateUser", JSON.stringify(onlineUsers)); // Update all users
-    }
+    const userState = JSON.parse(data);
+    onlineUsers[userState.username] = userState;
+    io.emit("updateUser", JSON.stringify(onlineUsers));
   });
 });
 

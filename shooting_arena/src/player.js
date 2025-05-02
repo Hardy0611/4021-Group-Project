@@ -30,6 +30,8 @@ const PlayerSprite = function () {
     sequence: sequences["idleDown"],
     animationSpeed: 0.1,
     direction: "idle", // 'up', 'down', 'left', 'right', 'idle
+    health: 100,
+    weapon: "none", // Replace with actual weapon state
   };
 
   var boundingBox = null;
@@ -236,6 +238,51 @@ const PlayerSprite = function () {
     return player.direction;
   };
 
+  const getPlayerHealth = function () {
+    return player.health;
+  };
+
+  const getPlayerWeapon = function () {
+    return player.weapon;
+  }
+
+  const setPosition = function (pos) {
+    // Accepts either a THREE.Vector3 or an object {x, y, z}
+    if (player.sprite) {
+      player.position.x = pos.x;
+      player.position.y = pos.y ?? player.position.y; // Default to current y if not provided
+      player.position.z = pos.z;
+      player.sprite.position.x = player.position.x;
+      player.sprite.position.y = player.position.y;
+      player.sprite.position.z = player.position.z;
+    }
+  };
+  
+  const setDirection = function (dir) {
+    // Accepts a string: "up", "down", "left", "right", "idle"
+    if (dir && dir !== player.direction) {
+      player.direction = dir;
+      switch (dir) {
+        case "left":
+          setSequence(sequences.moveLeft);
+          break;
+        case "up":
+          setSequence(sequences.moveUp);
+          break;
+        case "right":
+          setSequence(sequences.moveRight);
+          break;
+        case "down":
+          setSequence(sequences.moveDown);
+          break;
+        case "idle":
+        default:
+          setSequence(sequences.idleDown);
+          break;
+      }
+    }
+  };
+
   return {
     createPlayer: createPlayer,
     move: move,
@@ -245,6 +292,10 @@ const PlayerSprite = function () {
     getPlayerPosition: getPlayerPosition,
     getBoundBox: getBoundBox,
     getPlayerDirection: getPlayerDirection,
+    getPlayerHealth: getPlayerHealth,
+    getPlayerWeapon: getPlayerWeapon,
+    setPosition: setPosition,
+    setDirection: setDirection
   };
 };
 

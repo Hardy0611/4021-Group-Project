@@ -2,12 +2,13 @@ import { io } from "socket.io-client"; // Only if using a bundler like webpack/v
 
 const Socket = (function () {
   let socket = null;
-  const connect = (serverUrl) => {
+  const connect = (serverUrl, onConnected) => {
     if (!socket) {
       socket = io(serverUrl);
     }
     socket.on("connect", () => {
       console.log("Connected to server");
+      if (onConnected) onConnected();
     });
     socket.on("disconnect", () => {
       console.log("Disconnected from server");
@@ -22,7 +23,15 @@ const Socket = (function () {
   const getSocket = function () {
     return socket;
   };
-  return { connect, disconnect, getSocket };
+  const onUpdateUsers = (callback) => {
+    if (socket) {
+      socket.on("updateUser", (data) => {
+        const users = JSON.parse(data);
+        callback(users);
+      });
+    }
+  };
+  return { connect, disconnect, getSocket, onUpdateUsers };
 })();
 
 export default Socket;

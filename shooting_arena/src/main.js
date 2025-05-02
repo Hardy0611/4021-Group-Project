@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import PlayerSprite from "./player.js";
 import Map from "./map.js";
+import Socket from "./socket.js";
 
 // Setup
 const scene = new THREE.Scene();
@@ -10,6 +11,7 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   1000
 );
+const socket = Socket.getSocket();
 
 const renderer = new THREE.WebGLRenderer({
   canvas: document.querySelector("#map"),
@@ -20,6 +22,17 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 
 const playerSprite = PlayerSprite();
 playerSprite.createPlayer("asset/player1_sprite.png", scene, camera);
+
+// Helper to get current player state
+function getPlayerState() {
+  return {
+    username: window.currentUser?.username, // Set this after login
+    position: playerSprite.getPlayerPosition(),
+    direction: playerSprite.getPlayerDirection(),
+    weapon: playerSprite.getPlayerWeapon(), // Replace with actual weapon state
+    health: playerSprite.getPlayerHealth(), // Replace with actual health state
+  };
+}
 
 const map = Map();
 map.createMap(scene);
@@ -64,6 +77,37 @@ function addCoordinateIndicators() {
 // Call this function after scene setup
 addCoordinateIndicators();
 
+// Store other players' sprites
+const otherPlayers = {};
+
+// Listen for updates from server
+Socket.onUpdateUsers((users) => {
+  // console.log("Received users from server:", users);
+  Object.keys(users).forEach((username) => {
+    if (username === window.currentUser?.username) return; // Skip self
+
+    const userState = users[username];
+    if (!otherPlayers[username]) {
+      // Create sprite for new player
+      const sprite = PlayerSprite();
+      sprite.createPlayer("asset/player1_sprite.png", scene, camera);
+      otherPlayers[username] = sprite;
+      console.log("New player joined:", username);
+    }
+    // Update position/direction
+    otherPlayers[username].setPosition(userState.position);
+    otherPlayers[username].setDirection(userState.direction);
+  });
+
+  // Remove players who left
+  Object.keys(otherPlayers).forEach((username) => {
+    if (!users[username]) {
+      scene.remove(otherPlayers[username].sprite);
+      delete otherPlayers[username];
+    }
+  });
+});
+
 // Update the position display in the animate function
 function updatePositionDisplay() {
   const display = document.getElementById("position-display");
@@ -79,6 +123,9 @@ function updatePositionDisplay() {
 // Modify the animate function to include position display update
 function animate(now, collideObjects) {
   playerSprite.updatePlayerAnimation(now);
+  Object.values(otherPlayers).forEach((sprite) => {
+    sprite.updatePlayerAnimation(now);
+  });
   playerSprite.updatePlayerPosition(collideObjects);
   updatePositionDisplay(); // Add this line
   renderer.render(scene, camera);
@@ -124,6 +171,11 @@ function checkObjectCollision() {
 renderer.setAnimationLoop((now) => {
   var collideObjects = checkObjectCollision();
   animate(now, collideObjects);
+
+  // Emit player state to server
+  if (socket && window.currentUser) {
+    socket.emit("updateUser", JSON.stringify(getPlayerState()));
+  }
 });
 
 // Handle window resize

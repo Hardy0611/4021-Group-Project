@@ -2,5 +2,9 @@
   "test": {
     "username": "test",
     "password": "$2b$10$FCXJCCjaw1Of3XXiFFR.f.RL/2vrGSShZ3Pb.m1LEFAIZjrhCreii"
+  },
+  "hardy": {
+    "username": "hardy",
+    "password": "$2b$10$cVm8RY3V/JL0DzOV0nsl4eRWIvkUwxcY8cX7e54PONSpDldaSDNVS"
   }
 }
