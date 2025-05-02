@@ -1,0 +1,10 @@
+/* Signin overlay */
+#signin-form {
+    width: 270px;
+    align-self: stretch;
+}
+#register-form {
+    width: 380px;
+    background: var(--register-form-background);
+    padding: 20px;
+}
