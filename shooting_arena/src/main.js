@@ -25,12 +25,17 @@ playerSprite.createPlayer("asset/player1_sprite.png", scene, camera);
 
 // Helper to get current player state
 function getPlayerState() {
+  const position = playerSprite.getPlayerPosition();
   return {
-    username: window.currentUser?.username, // Set this after login
-    position: playerSprite.getPlayerPosition(),
+    username: window.currentUser?.username,
+    position: {
+      x: position.x,
+      y: position.y, // Make sure Y position is included
+      z: position.z
+    },
     direction: playerSprite.getPlayerDirection(),
-    weapon: playerSprite.getPlayerWeapon(), // Replace with actual weapon state
-    health: playerSprite.getPlayerHealth(), // Replace with actual health state
+    weapon: playerSprite.getPlayerWeapon(),
+    health: playerSprite.getPlayerHealth(),
   };
 }
 
@@ -54,6 +59,11 @@ window.addEventListener("keydown", (e) => {
 window.addEventListener("keyup", (e) => {
   if (keys.hasOwnProperty(e.key)) {
     playerSprite.stop(keys[e.key]);
+    
+    // Send updated state immediately after stopping
+    if (socket && window.currentUser) {
+      socket.emit("updateUser", JSON.stringify(getPlayerState()));
+    }
   }
 });
 
@@ -97,6 +107,8 @@ Socket.onUpdateUsers((users) => {
     // Update position/direction
     otherPlayers[username].setPosition(userState.position);
     otherPlayers[username].setDirection(userState.direction);
+    // otherPlayers[username].setWeapon(userState.weapon);
+    // otherPlayers[username].setHealth(userState.health); 
   });
 
   // Remove players who left

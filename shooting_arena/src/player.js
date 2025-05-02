@@ -98,25 +98,25 @@ const PlayerSprite = function () {
   };
 
   // This function stops the player from moving.
-  const stop = function (dir) {
-    if (player.direction == dir) {
-      player.direction = "idle";
-      switch (dir) {
-        case "left":
-          setSequence(sequences.idleLeft);
-          break;
-        case "up":
-          setSequence(sequences.idleUp);
-          break;
-        case "right":
-          setSequence(sequences.idleRight);
-          break;
-        case "down":
-          setSequence(sequences.idleDown);
-          break;
-      }
+const stop = function (dir) {
+  if (player.direction == dir) {
+    switch (dir) {
+      case "left":
+        setSequence(sequences.idleLeft);
+        break;
+      case "up":
+        setSequence(sequences.idleUp);
+        break;
+      case "right":
+        setSequence(sequences.idleRight);
+        break;
+      case "down":
+        setSequence(sequences.idleDown);
+        break;
     }
-  };
+    player.direction = "idle"; // Important: Update to idle state
+  }
+};
 
   // Update player position
   const updatePlayerPosition = function (collideObjects) {
@@ -247,14 +247,11 @@ const PlayerSprite = function () {
   }
 
   const setPosition = function (pos) {
-    // Accepts either a THREE.Vector3 or an object {x, y, z}
     if (player.sprite) {
       player.position.x = pos.x;
-      player.position.y = pos.y ?? player.position.y; // Default to current y if not provided
+      player.position.y = pos.y || 1.5; // Default to 1.5 if not provided
       player.position.z = pos.z;
-      player.sprite.position.x = player.position.x;
-      player.sprite.position.y = player.position.y;
-      player.sprite.position.z = player.position.z;
+      player.sprite.position.set(player.position.x, player.position.y, player.position.z);
     }
   };
   
