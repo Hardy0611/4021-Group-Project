@@ -7,6 +7,7 @@ import fs from "fs";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
+import Environment from "./environment.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const usersFile = path.join(__dirname, "data/users.json");
 
@@ -21,6 +22,9 @@ const io = new Server(httpServer, {
 });
 
 const onlineUsers = {};
+
+// Initialize instances
+const environmentInstance = Environment();
 
 // Middleware for parsing JSON
 app.use(express.json());
@@ -163,6 +167,17 @@ io.on("connection", (socket) => {
     onlineUsers[userState.username] = userState;
     io.emit("updateUser", JSON.stringify(onlineUsers));
   });
+
+  // Handle guns
+  socket.on("getGun", () => {
+    let gunsArray = environmentInstance.getGunPosition();
+    gunsArray = gunsArray.length
+      ? gunsArray
+      : environmentInstance.initializeGunPosition();
+    io.emit("updateGun", JSON.stringify(gunsArray));
+  });
+
+  socket.on("removeGun", () => {});
 });
 
 // serving the backend server

@@ -2,7 +2,7 @@ import * as THREE from "three";
 import PlayerSprite from "./player.js";
 import Map from "./map.js";
 import Socket from "./socket.js";
-import GunSprite from "./gun.js";
+import GunSpriteArray from "./gun.js";
 import BulletSprite from "./bullet.js";
 
 /**
@@ -36,6 +36,10 @@ const socket = Socket.getSocket();
 // Store other players' sprites
 const otherPlayers = {};
 
+// Initialize Gun for players
+const unarmGunArray = GunSpriteArray(scene);
+socket.emit("getGun");
+
 /**
  * PLAYER STATE MANAGEMENT
  */
@@ -55,8 +59,8 @@ function getPlayerState() {
     health: playerSprite.getPlayerHealth(),
   };
 }
-const gunSprite = GunSprite();
-gunSprite.createGun("asset/gun.png", scene, 10, 40);
+// const gunSprite = GunSprite();
+// gunSprite.createGun("asset/gun.png", scene, 10, 40);
 
 // Handle bullet: create, animate, destroy
 var bulletSpriteArray = [];
@@ -233,29 +237,29 @@ function animate(now, collideObjects) {
   // Update physics and state
   playerSprite.updatePlayerPosition(collideObjects);
   updatePositionDisplay();
-  gunSprite.updateGunPosition();
+  // gunSprite.updateGunPosition();
 
   // Render the scene
   renderer.render(scene, camera);
 }
-function collectGuns() {
-  if (playerSprite.getHasGun()) return;
-  var playerBB = playerSprite.getBoundBox();
-  var gunBB = gunSprite.getBoundBox();
-  if (!playerBB || !gunBB) {
-    return false;
-  }
-  if (playerBB.intersectsBox(gunBB)) {
-    playerSprite.updateGunStatus();
-    gunSprite.attachGunToPlayer(playerSprite.getPlayerSprite());
-    return true;
-  }
-  return false;
-}
+// function collectGuns() {
+//   if (playerSprite.getHasGun()) return;
+//   var playerBB = playerSprite.getBoundBox();
+//   var gunBB = gunSprite.getBoundBox();
+//   if (!playerBB || !gunBB) {
+//     return false;
+//   }
+//   if (playerBB.intersectsBox(gunBB)) {
+//     playerSprite.updateGunStatus();
+//     gunSprite.attachGunToPlayer(playerSprite.getPlayerSprite());
+//     return true;
+//   }
+//   return false;
+// }
 
 renderer.setAnimationLoop((now) => {
   var collideObjects = checkObjectCollision();
-  collectGuns();
+  // collectGuns();
   animate(now, collideObjects);
 
   // Emit player state to server
