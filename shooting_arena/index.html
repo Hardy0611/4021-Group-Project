@@ -4,10 +4,68 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>2.5D Shooting Game</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="src/style.css" rel="stylesheet">
   </head>
   <body>
     <div id="app"></div>
     <canvas id="map"></canvas>
-    <script type="module" src="/src/main.js"></script>
+    <!-- Sing in or Register Form -->
+    <div id="signin-overlay" class="overlay row">
+      <div class="content shadow row">
+          <form id="signin-form" class="col">
+              <div class="caption">SIGN IN WITH YOUR ACCOUNT</div>
+              <div class="spacer-0"></div>
+              <input id="signin-username" placeholder="Enter your username"></input>
+              <input id="signin-password" type="password" placeholder="Enter your password"></input>
+              <div class="spacer-0"></div>
+              <button type="submit">Sign In</button>
+              <div id="signin-message" class="warning center"></div>
+              <div class="spacer-grow"></div>
+          </form>
+
+          <div class="spacer-0"></div>
+
+          <form id="register-form" class="col">
+              <div class="caption">OR, REGISTER IF YOU DO NOT HAVE ONE</div>
+              <div class="spacer-0"></div>
+              <input id="register-username" maxlength="10" placeholder="Enter your username"></input>
+              <input id="register-password" type="password" placeholder="Enter your password"></input>
+              <input id="register-confirm" type="password" placeholder="Enter your password again"></input>
+              <div class="spacer-0"></div>
+              <button type="submit">Register</button>
+              <div id="register-message" class="warning center"></div>
+          </form>
+      </div>
+  </div>
+  <!-- <script type="module" src="/src/main.js"></script> -->
+  <script type="module" src="src/registration.js"></script>
+  <script type="module" src="src/authentication.js"></script>
+  <script type="module" src="src/ui.js"></script>
+  <script type="module" src="src/socket.js"></script>
+  <script type="module">
+    import UI from './src/ui.js';
+    import { SignInForm } from './src/ui.js';
+    import Authentication from './src/authentication.js';
+    import Socket from './src/socket.js';
+    $(function() {
+      //Init the UI
+      UI.initialize();
+      // Validate the signin
+      Authentication.validate(
+          (user) => {
+              window.currentUser = user;
+              console.log("User authenticated: ", user);
+              SignInForm.hide();
+              Socket.connect("http://localhost:3000");
+              import("./src/main.js").then(() => {
+                console.log("Game module loaded");
+              });
+          },
+          () => { SignInForm.show(); }
+      );
+    });
+    </script>
   </body>
 </html>
