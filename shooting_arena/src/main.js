@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import PlayerSprite from "./player.js";
 import Map from "./map.js";
+import GunSprite from "./gun.js";
+import BulletSprite from "./bullet.js";
 
 // Setup
 const scene = new THREE.Scene();
@@ -21,8 +23,21 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 const playerSprite = PlayerSprite();
 playerSprite.createPlayer("asset/player1_sprite.png", scene, camera);
 
+const gunSprite = GunSprite();
+gunSprite.createGun("asset/gun.png", scene, 10, 40);
+
 const map = Map();
 map.createMap(scene);
+
+// Handle bullet: create, animate, destroy
+var bulletSpriteArray = [];
+function updateBulletAnimation() {
+  if (bulletSpriteArray.length == 0) return;
+  if (!bulletSpriteArray[0].isDestroy()) {
+    bulletSpriteArray[0].moveBullet();
+  }
+  bulletSpriteArray.shift();
+}
 
 // Input handling
 const keys = {
@@ -35,6 +50,20 @@ const keys = {
 window.addEventListener("keydown", (e) => {
   if (keys.hasOwnProperty(e.key)) {
     playerSprite.move(keys[e.key]);
+  } else if (e.key === " ") {
+    var direction = playerSprite.getPlayerFacingDirection();
+    var position = playerSprite.getPlayerPosition();
+    if (playerSprite.getHasGun()) {
+      const bulletSprite = BulletSprite();
+      bulletSprite.createBullet(
+        scene,
+        position.x,
+        position.z,
+        direction,
+        map.getBoundBoxArray()
+      );
+      bulletSpriteArray.push(bulletSprite);
+    }
   }
 });
 
@@ -78,9 +107,11 @@ function updatePositionDisplay() {
 
 // Modify the animate function to include position display update
 function animate(now, collideObjects) {
+  updateBulletAnimation();
   playerSprite.updatePlayerAnimation(now);
   playerSprite.updatePlayerPosition(collideObjects);
-  updatePositionDisplay(); // Add this line
+  updatePositionDisplay();
+  gunSprite.updateGunPosition();
   renderer.render(scene, camera);
 }
 
@@ -121,8 +152,24 @@ function checkObjectCollision() {
   return collideObjects;
 }
 
+function collectGuns() {
+  if (playerSprite.getHasGun()) return;
+  var playerBB = playerSprite.getBoundBox();
+  var gunBB = gunSprite.getBoundBox();
+  if (!playerBB || !gunBB) {
+    return false;
+  }
+  if (playerBB.intersectsBox(gunBB)) {
+    playerSprite.updateGunStatus();
+    gunSprite.attachGunToPlayer(playerSprite.getPlayerSprite());
+    return true;
+  }
+  return false;
+}
+
 renderer.setAnimationLoop((now) => {
   var collideObjects = checkObjectCollision();
+  collectGuns();
   animate(now, collideObjects);
 });
 

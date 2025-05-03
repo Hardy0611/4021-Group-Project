@@ -30,6 +30,8 @@ const PlayerSprite = function () {
     sequence: sequences["idleDown"],
     animationSpeed: 0.1,
     direction: "idle", // 'up', 'down', 'left', 'right', 'idle
+    facing: "down",
+    hasGun: false,
   };
 
   var boundingBox = null;
@@ -79,15 +81,19 @@ const PlayerSprite = function () {
     if (dir != player.direction) {
       switch (dir) {
         case "left":
+          player.facing = "left";
           setSequence(sequences.moveLeft);
           break;
         case "up":
+          player.facing = "up";
           setSequence(sequences.moveUp);
           break;
         case "right":
+          player.facing = "right";
           setSequence(sequences.moveRight);
           break;
         case "down":
+          player.facing = "down";
           setSequence(sequences.moveDown);
           break;
       }
@@ -224,6 +230,14 @@ const PlayerSprite = function () {
     }
   };
 
+  const updateGunStatus = function () {
+    player.hasGun = true;
+  };
+
+  const getPlayerSprite = function () {
+    return player.sprite;
+  };
+
   const getPlayerPosition = function () {
     return player.position;
   };
@@ -236,15 +250,27 @@ const PlayerSprite = function () {
     return player.direction;
   };
 
+  const getHasGun = function () {
+    return player.hasGun;
+  };
+
+  const getPlayerFacingDirection = function () {
+    return player.facing;
+  };
+
   return {
     createPlayer: createPlayer,
     move: move,
     stop: stop,
     updatePlayerPosition: updatePlayerPosition,
     updatePlayerAnimation: updatePlayerAnimation,
+    updateGunStatus: updateGunStatus,
+    getPlayerSprite: getPlayerSprite,
     getPlayerPosition: getPlayerPosition,
     getBoundBox: getBoundBox,
     getPlayerDirection: getPlayerDirection,
+    getHasGun: getHasGun,
+    getPlayerFacingDirection: getPlayerFacingDirection,
   };
 };
 
