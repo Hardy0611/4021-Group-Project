@@ -2,6 +2,8 @@ import * as THREE from "three";
 import PlayerSprite from "./player.js";
 import Map from "./map.js";
 import Socket from "./socket.js";
+import GunSprite from "./gun.js";
+import BulletSprite from "./bullet.js";
 
 /**
  * GAME INITIALIZATION
@@ -45,13 +47,25 @@ function getPlayerState() {
     position: {
       x: position.x,
       y: position.y,
-      z: position.z
+      z: position.z,
     },
     sequence: playerSprite.getPlayerSequence(),
     direction: playerSprite.getPlayerDirection(),
-    weapon: playerSprite.getPlayerWeapon(),
+    hasGun: playerSprite.getHasGun(),
     health: playerSprite.getPlayerHealth(),
   };
+}
+const gunSprite = GunSprite();
+gunSprite.createGun("asset/gun.png", scene, 10, 40);
+
+// Handle bullet: create, animate, destroy
+var bulletSpriteArray = [];
+function updateBulletAnimation() {
+  if (bulletSpriteArray.length == 0) return;
+  if (!bulletSpriteArray[0].isDestroy()) {
+    bulletSpriteArray[0].moveBullet();
+  }
+  bulletSpriteArray.shift();
 }
 
 /**
@@ -67,13 +81,27 @@ const keys = {
 window.addEventListener("keydown", (e) => {
   if (keys.hasOwnProperty(e.key)) {
     playerSprite.move(keys[e.key]);
+  } else if (e.key === " ") {
+    var direction = playerSprite.getPlayerFacingDirection();
+    var position = playerSprite.getPlayerPosition();
+    if (playerSprite.getHasGun()) {
+      const bulletSprite = BulletSprite();
+      bulletSprite.createBullet(
+        scene,
+        position.x,
+        position.z,
+        direction,
+        map.getBoundBoxArray()
+      );
+      bulletSpriteArray.push(bulletSprite);
+    }
   }
 });
 
 window.addEventListener("keyup", (e) => {
   if (keys.hasOwnProperty(e.key)) {
     playerSprite.stop(keys[e.key]);
-    
+
     // Send updated state immediately after stopping
     if (socket && window.currentUser) {
       socket.emit("updateUser", JSON.stringify(getPlayerState()));
@@ -92,7 +120,7 @@ Socket.onUpdateUsers((users) => {
     if (username === window.currentUser?.username) return;
 
     const userState = users[username];
-    
+
     // Handle new player joining
     if (!otherPlayers[username]) {
       const sprite = PlayerSprite();
@@ -100,7 +128,7 @@ Socket.onUpdateUsers((users) => {
       otherPlayers[username] = sprite;
       console.log("New player joined:", username);
     }
-    
+
     // Update existing player state
     otherPlayers[username].setAll(userState);
   });
@@ -147,24 +175,21 @@ function updatePositionDisplay() {
   }
 }
 
-/**
- * COLLISION DETECTION
- */
-let objectBBStatus = [];
+var objectBBStatus = [];
 
 function checkObjectCollision() {
   const collideObjects = [];
-  
+
   if (map && playerSprite) {
     const mapBB = map.getBoundBoxArray();
     const playerBB = playerSprite.getBoundBox();
-    
+
     // Skip if bounding boxes aren't ready
     if (!playerBB || mapBB.length === 0) {
-      objectBBStatus.forEach(status => status.previousCollide = false);
+      objectBBStatus.forEach((status) => (status.previousCollide = false));
       return [];
     }
-    
+
     // Initialize collision status array if needed
     if (objectBBStatus.length === 0 && mapBB.length !== 0) {
       for (let i = 0; i < mapBB.length; i++) {
@@ -174,12 +199,12 @@ function checkObjectCollision() {
         });
       }
     }
-    
+
     // Check collisions with each object
     for (let i = 0; i < mapBB.length; i++) {
       if (playerBB.intersectsBox(mapBB[i])) {
         if (!objectBBStatus[i].previousCollide) {
-          objectBBStatus[i].previousKeyPressCollide = 
+          objectBBStatus[i].previousKeyPressCollide =
             playerSprite.getPlayerDirection();
         }
         objectBBStatus[i].previousCollide = true;
@@ -203,18 +228,34 @@ function animate(now, collideObjects) {
   Object.values(otherPlayers).forEach((sprite) => {
     sprite.updatePlayerAnimation(now);
   });
-  
+  updateBulletAnimation();
+
   // Update physics and state
   playerSprite.updatePlayerPosition(collideObjects);
   updatePositionDisplay();
-  
+  gunSprite.updateGunPosition();
+
   // Render the scene
   renderer.render(scene, camera);
 }
+function collectGuns() {
+  if (playerSprite.getHasGun()) return;
+  var playerBB = playerSprite.getBoundBox();
+  var gunBB = gunSprite.getBoundBox();
+  if (!playerBB || !gunBB) {
+    return false;
+  }
+  if (playerBB.intersectsBox(gunBB)) {
+    playerSprite.updateGunStatus();
+    gunSprite.attachGunToPlayer(playerSprite.getPlayerSprite());
+    return true;
+  }
+  return false;
+}
 
-// Main animation loop
 renderer.setAnimationLoop((now) => {
-  const collideObjects = checkObjectCollision();
+  var collideObjects = checkObjectCollision();
+  collectGuns();
   animate(now, collideObjects);
 
   // Emit player state to server

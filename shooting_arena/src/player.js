@@ -11,22 +11,22 @@ const PlayerSprite = function () {
    */
   const sequences = {
     // Idle animations
-    idleLeft:  { uv: { u: 0, v: 0.75 },  count: 3, timing: 1000 },
-    idleUp:    { uv: { u: 0, v: 0.625 }, count: 1, timing: 1000 },
-    idleRight: { uv: { u: 0, v: 0.5 },   count: 3, timing: 1000 },
-    idleDown:  { uv: { u: 0, v: 0.875 }, count: 3, timing: 1000 },
+    idleLeft: { uv: { u: 0, v: 0.75 }, count: 3, timing: 1000 },
+    idleUp: { uv: { u: 0, v: 0.625 }, count: 1, timing: 1000 },
+    idleRight: { uv: { u: 0, v: 0.5 }, count: 3, timing: 1000 },
+    idleDown: { uv: { u: 0, v: 0.875 }, count: 3, timing: 1000 },
 
     // Movement animations
-    moveLeft:  { uv: { u: 0, v: 0.25 },  count: 10, timing: 50 },
-    moveUp:    { uv: { u: 0, v: 0.125 }, count: 10, timing: 50 },
-    moveRight: { uv: { u: 0, v: 0 },     count: 10, timing: 50 },
-    moveDown:  { uv: { u: 0, v: 0.375 }, count: 10, timing: 50 }
+    moveLeft: { uv: { u: 0, v: 0.25 }, count: 10, timing: 50 },
+    moveUp: { uv: { u: 0, v: 0.125 }, count: 10, timing: 50 },
+    moveRight: { uv: { u: 0, v: 0 }, count: 10, timing: 50 },
+    moveDown: { uv: { u: 0, v: 0.375 }, count: 10, timing: 50 },
   };
 
   // Sprite sheet configuration
   const horizontalTile = 10;
   const verticalTile = 8;
-  
+
   /**
    * PLAYER STATE
    */
@@ -42,9 +42,10 @@ const PlayerSprite = function () {
     sprite: null,
     sequence: sequences.idleDown,
     animationSpeed: 0.1,
-    direction: "idle", // 'up', 'down', 'left', 'right', 'idle'
     health: 100,
-    weapon: "none"
+    direction: "idle", // 'up', 'down', 'left', 'right', 'idle
+    facing: "down",
+    hasGun: false,
   };
 
   /**
@@ -69,7 +70,7 @@ const PlayerSprite = function () {
     // Create sprite material and mesh
     const spriteMaterial = new THREE.SpriteMaterial({
       map: player.map,
-      transparent: true
+      transparent: true,
     });
 
     player.sprite = new THREE.Sprite(spriteMaterial);
@@ -126,15 +127,19 @@ const PlayerSprite = function () {
     if (dir !== player.direction) {
       switch (dir) {
         case "left":
+          player.facing = "left";
           setSequence(sequences.moveLeft);
           break;
         case "up":
+          player.facing = "up";
           setSequence(sequences.moveUp);
           break;
         case "right":
+          player.facing = "right";
           setSequence(sequences.moveRight);
           break;
         case "down":
+          player.facing = "down";
           setSequence(sequences.moveDown);
           break;
       }
@@ -240,7 +245,7 @@ const PlayerSprite = function () {
   /**
    * Updates camera position to follow player with smooth motion
    */
-  const updateCameraPosition = function() {
+  const updateCameraPosition = function () {
     const cameraTargetX = player.position.x;
     const cameraTargetZ = player.position.z + 15; // Position camera behind player
     const cameraLerpFactor = 0.1; // Smoothing factor (0-1)
@@ -249,7 +254,7 @@ const PlayerSprite = function () {
       (cameraTargetX - player.camera.position.x) * cameraLerpFactor;
     player.camera.position.z +=
       (cameraTargetZ - player.camera.position.z) * cameraLerpFactor;
-    
+
     // Look at player
     player.camera.lookAt(
       new THREE.Vector3(player.position.x, 0, player.position.z)
@@ -259,6 +264,15 @@ const PlayerSprite = function () {
   /**
    * GETTERS AND SETTERS
    */
+
+  const updateGunStatus = function () {
+    player.hasGun = true;
+  };
+
+  const getPlayerSprite = function () {
+    return player.sprite;
+  };
+
   const getPlayerPosition = function () {
     return player.position;
   };
@@ -275,12 +289,16 @@ const PlayerSprite = function () {
     return player.direction;
   };
 
-  const getPlayerHealth = function () {
-    return player.health;
+  const getHasGun = function () {
+    return player.hasGun;
   };
 
-  const getPlayerWeapon = function () {
-    return player.weapon;
+  const getPlayerFacingDirection = function () {
+    return player.facing;
+  };
+
+  const getPlayerHealth = function () {
+    return player.health;
   };
 
   /**
@@ -293,18 +311,22 @@ const PlayerSprite = function () {
     setDirection(userState.direction);
     setSequence(userState.sequence);
     player.health = userState.health;
-    player.weapon = userState.weapon;
-  }
+    player.hasGun = userState.hasGun;
+  };
 
   const setPosition = function (pos) {
     if (player.sprite) {
       player.position.x = pos.x;
       player.position.y = pos.y || 1.5; // Default to 1.5 if not provided
       player.position.z = pos.z;
-      player.sprite.position.set(player.position.x, player.position.y, player.position.z);
+      player.sprite.position.set(
+        player.position.x,
+        player.position.y,
+        player.position.z
+      );
     }
   };
-  
+
   /**
    * Sets the player's direction and corresponding animation
    * @param {string} dir - Direction: "up", "down", "left", "right", "idle"
@@ -342,13 +364,16 @@ const PlayerSprite = function () {
     stop,
     updatePlayerPosition,
     updatePlayerAnimation,
+    updateGunStatus,
+    getPlayerSprite,
     getPlayerPosition,
     getBoundBox,
     getPlayerDirection,
     getPlayerHealth,
-    getPlayerWeapon,
+    getHasGun,
     getPlayerSequence,
-    setAll
+    getPlayerFacingDirection,
+    setAll,
   };
 };
 

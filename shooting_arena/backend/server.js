@@ -10,7 +10,6 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const usersFile = path.join(__dirname, "data/users.json");
 
-
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
@@ -18,7 +17,7 @@ const io = new Server(httpServer, {
     origin: "*", // Allow all origins
     methods: ["GET", "POST"],
     credentials: true, // Allow cookies/session
-  }
+  },
 });
 
 const onlineUsers = {};
@@ -26,10 +25,12 @@ const onlineUsers = {};
 // Middleware for parsing JSON
 app.use(express.json());
 
-app.use(cors({
-  origin: true,         // Allow all origins
-  credentials: true     // Allow cookies/session
-}));
+app.use(
+  cors({
+    origin: true, // Allow all origins
+    credentials: true, // Allow cookies/session
+  })
+);
 
 // This helper function checks whether the text only contains word characters
 function containWordCharsOnly(text) {
@@ -137,7 +138,7 @@ io.on("connection", (socket) => {
       position: { x: 0, y: 1.5, z: 20 },
       sequence: null,
       direction: "idle",
-      weapon: "none",
+      hasGun: false,
       health: 100,
     };
     console.log(onlineUsers);
