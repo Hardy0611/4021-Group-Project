@@ -275,6 +275,9 @@ const PlayerSprite = function (username) {
   const updateGunPosition = function () {
     if (player.hasGun) {
       player.gun.updateGunPosition();
+    } else if (player.gun) {
+      player.gun.removeGun();
+      player.gun = null;
     }
   };
 
@@ -318,6 +321,7 @@ const PlayerSprite = function (username) {
     return username;
   };
 
+  // Handle player's gun
   const createGun = function (scene, gunInfo) {
     player.gun = GunSprite();
     player.gun.createGun(
@@ -329,6 +333,14 @@ const PlayerSprite = function (username) {
     );
     player.gun.attachGunToPlayer(player.sprite);
     player.hasGun = true;
+  };
+
+  const dropGun = function () {
+    if (player.hasGun) {
+      player.hasGun = false;
+      player.gun.removeGun();
+      player.gun = null;
+    }
   };
 
   /**
@@ -408,6 +420,7 @@ const PlayerSprite = function (username) {
     getPlayerFacingDirection,
     setAll,
     createGun,
+    dropGun,
   };
 };
 

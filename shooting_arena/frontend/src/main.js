@@ -97,6 +97,9 @@ window.addEventListener("keydown", (e) => {
       );
       bulletSpriteArray.push(bulletSprite);
     }
+  } else if (e.key === "d") {
+    // Drop the gun
+    playerSprite.dropGun();
   }
 });
 
