@@ -89,6 +89,10 @@ const PlayerSprite = function (username) {
     // Setup collision detection
     boundingBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
     boundingBox.setFromObject(player.sprite);
+
+    // Temporary increase BB size for easy shooting TO DO: REMOVE OR ADJUST
+    boundingBox.min.z -= 1;
+    boundingBox.max.z += 1;
   };
 
   /**

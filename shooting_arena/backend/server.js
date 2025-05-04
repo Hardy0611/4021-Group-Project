@@ -25,6 +25,7 @@ const onlineUsers = {};
 
 // Initialize instances
 const environmentInstance = Environment();
+var bulletIDCounter = 0;
 
 // Middleware for parsing JSON
 app.use(express.json());
@@ -190,6 +191,8 @@ io.on("connection", (socket) => {
 
   socket.on("addBullet", (data) => {
     const bulletInfo = JSON.parse(data);
+    bulletInfo["id"] = bulletIDCounter;
+    bulletIDCounter += 1;
     io.emit("addBullet", JSON.stringify(bulletInfo));
   });
 });

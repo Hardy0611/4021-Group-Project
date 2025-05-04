@@ -12,6 +12,7 @@ const BulletSprite = function () {
   var boundingBox = null;
   var mapBBArray = null;
   const bullet = {
+    id: null,
     map: null,
     sprite: null,
     speed: 0.4,
@@ -21,7 +22,7 @@ const BulletSprite = function () {
     destroy: false,
   };
 
-  const createBullet = function (scene, x, z, direction, mapBB) {
+  const createBullet = function (id, scene, x, z, direction, mapBB) {
     if (bullet.destroy) return;
     mapBBArray = mapBB;
 
@@ -38,15 +39,34 @@ const BulletSprite = function () {
       transparent: true,
     });
 
+    var initialX = x;
+    var initialZ = z;
+
+    const bulletOffset = 1.5;
+    switch (direction) {
+      case "left":
+        initialX -= bulletOffset;
+        break;
+      case "right":
+        initialX += bulletOffset;
+        break;
+      case "up":
+        initialZ -= bulletOffset;
+        break;
+      case "down":
+        initialZ += bulletOffset;
+        break;
+    }
+
     bullet.sprite = new THREE.Sprite(spriteMaterial);
     bullet.sprite.scale.set(0.75, 0.75, 1);
-    bullet.sprite.position.set(x, 1, z);
+    bullet.sprite.position.set(initialX, 1, initialZ);
 
     scene.add(bullet.sprite);
 
     bullet.direction = direction;
-    bullet.initialX = x;
-    bullet.initialZ = z;
+    bullet.initialX = initialX;
+    bullet.initialZ = initialZ;
 
     // Create Bounding box
     boundingBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
@@ -65,6 +85,35 @@ const BulletSprite = function () {
     mapBBArray = null;
   };
 
+  const hitPlayer = function (currentPlayerBB, otherPlayerBB) {
+    if (bullet.destroy || !currentPlayerBB || !otherPlayerBB) return false;
+    if (boundingBox.intersectsBox(currentPlayerBB)) {
+      removeBullet();
+      return {
+        hitCurrentPlayer: true,
+        hitOtherPlayer: false,
+        otherPlayerUsername: null,
+      };
+    }
+
+    for (let i = 0; i < otherPlayerBB.length; i++) {
+      if (boundingBox.intersectsBox(otherPlayerBB[i].BB)) {
+        removeBullet();
+        return {
+          hitCurrentPlayer: false,
+          hitOtherPlayer: true,
+          otherPlayerUsername: otherPlayerBB[i].username,
+        };
+      }
+    }
+
+    return {
+      hitCurrentPlayer: false,
+      hitOtherPlayer: false,
+      otherPlayerUsername: null,
+    };
+  };
+
   const collideObject = function () {
     if (bullet.destroy || !mapBBArray || !boundingBox) return false;
     for (let i = 0; i < mapBBArray.length; i++) {
@@ -76,10 +125,15 @@ const BulletSprite = function () {
     return false;
   };
 
-  const moveBullet = function () {
+  const moveBullet = function (currentPlayerBB, otherPlayerBB) {
     if (bullet.destroy) return;
     const duration = 500;
     const startTime = Date.now();
+    var hitPlayerStatus = {
+      hitCurrentPlayer: false,
+      hitOtherPlayer: false,
+      otherPlayerUsername: null,
+    };
 
     const updateBulletPosition = () => {
       const elapsedTime = Date.now() - startTime;
@@ -89,6 +143,7 @@ const BulletSprite = function () {
           clearInterval(intervalId);
           return;
         }
+
         // Calculate the new position
         switch (bullet.direction) {
           case "left":
@@ -118,6 +173,16 @@ const BulletSprite = function () {
             .copy(bullet.sprite.geometry.boundingBox)
             .applyMatrix4(bullet.sprite.matrixWorld);
         }
+
+        hitPlayerStatus = hitPlayer(currentPlayerBB, otherPlayerBB);
+        console.log(hitPlayerStatus);
+        if (
+          hitPlayerStatus.hitCurrentPlayer ||
+          hitPlayerStatus.hitOtherPlayer
+        ) {
+          clearInterval(intervalId);
+          return;
+        }
       } else {
         // Stop moving the bullet after 5 seconds
         clearInterval(intervalId);
@@ -127,17 +192,25 @@ const BulletSprite = function () {
 
     // Start the movement loop
     const intervalId = setInterval(updateBulletPosition, 1000 / 60);
+
+    return hitPlayerStatus;
   };
 
   const isDestroy = function () {
     return bullet.destroy;
   };
 
+  const getID = function () {
+    return bullet.id;
+  };
+
   return {
-    createBullet: createBullet,
-    removeBullet: removeBullet,
-    moveBullet: moveBullet,
-    isDestroy: isDestroy,
+    createBullet,
+    removeBullet,
+    moveBullet,
+    isDestroy,
+    hitPlayer,
+    getID,
   };
 };
 

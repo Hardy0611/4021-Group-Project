@@ -63,9 +63,21 @@ function getPlayerState() {
 // Handle bullet: create, animate, destroy
 var bulletSpriteArray = [];
 function updateBulletAnimation() {
+  const otherPlayerBB = [];
+  for (let username in otherPlayers) {
+    otherPlayerBB.push({ username, BB: otherPlayers[username].getBoundBox() });
+  }
+
   if (bulletSpriteArray.length == 0) return;
   if (!bulletSpriteArray[0].isDestroy()) {
-    bulletSpriteArray[0].moveBullet();
+    const hitPlayerStatus = bulletSpriteArray[0].moveBullet(
+      playerSprite.getBoundBox(),
+      otherPlayerBB
+    );
+
+    console.log(hitPlayerStatus);
+
+    // update the hitPlayer
   }
   bulletSpriteArray.shift();
 }
@@ -100,19 +112,6 @@ window.addEventListener("keydown", (e) => {
     // Drop the gun
     playerSprite.dropGun();
   }
-});
-
-socket.on("addBullet", (data) => {
-  const bulletInfo = JSON.parse(data);
-  const bulletSprite = BulletSprite();
-  bulletSprite.createBullet(
-    scene,
-    bulletInfo.initialX,
-    bulletInfo.initialZ,
-    bulletInfo.direction,
-    map.getBoundBoxArray()
-  );
-  bulletSpriteArray.push(bulletSprite);
 });
 
 window.addEventListener("keyup", (e) => {
@@ -158,6 +157,20 @@ Socket.onUpdateUsers((users) => {
       console.log("Player left:", username);
     }
   });
+});
+
+socket.on("addBullet", (data) => {
+  const bulletInfo = JSON.parse(data);
+  const bulletSprite = BulletSprite();
+  bulletSprite.createBullet(
+    bulletInfo.id,
+    scene,
+    bulletInfo.initialX,
+    bulletInfo.initialZ,
+    bulletInfo.direction,
+    map.getBoundBoxArray()
+  );
+  bulletSpriteArray.push(bulletSprite);
 });
 
 /**
