@@ -177,7 +177,16 @@ io.on("connection", (socket) => {
     io.emit("updateGun", JSON.stringify(gunsArray));
   });
 
-  socket.on("removeGun", () => {});
+  socket.on("playerCollectGun", (data) => {
+    const info = JSON.parse(data);
+    const gun = environmentInstance.getGunByID(info.id);
+    const gunsArray = environmentInstance.removeGun(info.id);
+    io.emit("updateGun", JSON.stringify(gunsArray));
+    io.emit(
+      "updatePlayerGun",
+      JSON.stringify({ gun, username: info.username })
+    );
+  });
 });
 
 // serving the backend server

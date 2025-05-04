@@ -33,37 +33,68 @@ const Environment = function () {
     { x: 14, z: -10 },
   ];
   const maxGunNumber = 5;
-  var id = 0;
+  var idCounter = 0;
 
   var gunsPositions = [];
   const verticalTile = 8;
 
+  const usedIndices = new Set();
+
   const initializeGunPosition = function () {
     if (gunsPositions.length) return;
     for (let i = 0; i < maxGunNumber; i++) {
-      let posIndex = Math.floor(Math.random() * maxGunNumber);
+      let posIndex;
+      do {
+        posIndex = Math.floor(Math.random() * position.length);
+      } while (usedIndices.has(posIndex));
+      usedIndices.add(posIndex);
       gunsPositions.push({
-        id: id,
+        id: idCounter,
         initialPosX: position[posIndex].x,
         initialPosZ: position[posIndex].z,
         offsetX: 0,
         offsetY: Math.floor(Math.random() * verticalTile) / verticalTile,
       });
-      id += 1;
+      idCounter += 1;
     }
     return gunsPositions;
   };
 
   const removeGun = function (id) {
-    gunsPositions.filter((pos) => pos.id != id);
+    // Remove gun
+    let toBeRemoveGun = gunsPositions.filter((pos) => pos.id == id);
+    if (toBeRemoveGun) {
+      usedIndices.delete({
+        x: toBeRemoveGun.initialPosX,
+        z: toBeRemoveGun.initialPosZ,
+      });
+    }
+    gunsPositions = gunsPositions.filter((pos) => pos.id != id);
     if (gunsPositions.length == maxGunNumber) return;
-    let posIndex = Math.floor(Math.random() * maxGunNumber);
-    gunsPositions.push(position[posIndex]);
-    return position[posIndex];
+
+    // Add gun
+    let posIndex;
+    do {
+      posIndex = Math.floor(Math.random() * position.length);
+    } while (usedIndices.has(posIndex));
+    usedIndices.add(posIndex);
+    gunsPositions.push({
+      id: idCounter,
+      initialPosX: position[posIndex].x,
+      initialPosZ: position[posIndex].z,
+      offsetX: 0,
+      offsetY: Math.floor(Math.random() * verticalTile) / verticalTile,
+    });
+    idCounter += 1;
+    return gunsPositions;
   };
 
   const initializePlayerPosition = function () {
-    let posIndex = Math.floor(Math.random() * maxGunNumber);
+    let posIndex;
+    do {
+      posIndex = Math.floor(Math.random() * position.length);
+    } while (usedIndices.has(posIndex));
+    usedIndices.add(posIndex);
     return position[posIndex];
   };
 
@@ -71,11 +102,16 @@ const Environment = function () {
     return gunsPositions;
   };
 
+  const getGunByID = function (id) {
+    return gunsPositions.filter((pos) => pos.id == id)[0];
+  };
+
   return {
     initializeGunPosition,
     removeGun,
     initializePlayerPosition,
     getGunPosition,
+    getGunByID,
   };
 };
 

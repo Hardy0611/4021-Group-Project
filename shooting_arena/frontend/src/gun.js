@@ -4,23 +4,26 @@ import Socket from "./socket";
 const socket = Socket.getSocket();
 
 const GunSpriteArray = function (scene) {
-  const horizontalTile = 4;
-  const verticalTile = 8;
-  const gunNumber = 5;
-  const spriteTexture = "asset/gun.png";
-
   var gunsArray = [];
 
   socket.on("updateGun", (data) => {
     const gunPositionArray = JSON.parse(data);
 
     const newGunArray = [];
+    const gunIndex = new Set();
+    for (let i = 0; i < gunsArray.length; i++) {
+      gunIndex.add(i);
+    }
+    const existGunIndex = new Set();
     for (let i = 0; i < gunPositionArray.length; i++) {
       let alreadyExist = false;
       for (let j = 0; j < gunsArray.length; j++) {
         if (gunPositionArray[i] == gunsArray[j]) {
           newGunArray.push(gunsArray[j]);
           alreadyExist = true;
+          if (!existGunIndex.has(j)) {
+            existGunIndex.add(j);
+          }
           break;
         }
       }
@@ -36,6 +39,16 @@ const GunSpriteArray = function (scene) {
       }
     }
 
+    const difference = (set1, set2) => {
+      return new Set([...set1].filter((item) => !set2.has(item)));
+    };
+
+    const removeGun = difference(gunIndex, existGunIndex);
+    removeGun.forEach((j) => {
+      gunsArray[j].gunSprite.removeGun();
+      gunsArray[j].gunSprite = null;
+    });
+
     gunsArray = newGunArray;
     updateMapGun();
   });
@@ -46,7 +59,6 @@ const GunSpriteArray = function (scene) {
       if (!gunsArray[i].gunSprite) {
         gunsArray[i].gunSprite = new GunSprite();
         gunsArray[i].gunSprite.createGun(
-          spriteTexture,
           scene,
           gunsArray[i].initialPosX,
           gunsArray[i].initialPosZ,
@@ -57,12 +69,50 @@ const GunSpriteArray = function (scene) {
     }
   };
 
-  return { updateMapGun };
+  const playerCollectGun = function (id, playerSprite, username) {
+    // Remove from gunsArray
+    var toBeRemoveGun = gunsArray.filter((gun) => gun.id == id);
+
+    // Attach to player
+    toBeRemoveGun[0].gunSprite.attachGunToPlayer(playerSprite);
+
+    gunsArray = gunsArray.filter((gun) => gun.id != id);
+
+    // Update the backend
+    socket.emit("playerCollectGun", JSON.stringify({ id, username }));
+
+    return toBeRemoveGun[0].gunSprite;
+  };
+
+  const getBoundBoxArray = function () {
+    const BBArray = [];
+    for (let i = 0; i < gunsArray.length; i++) {
+      if (gunsArray[i].gunSprite) {
+        BBArray.push({
+          id: gunsArray[i].id,
+          BB: gunsArray[i].gunSprite.getBoundBox(),
+        });
+      }
+    }
+    return BBArray;
+  };
+
+  const getGunSpriteArray = function () {
+    return gunsArray;
+  };
+
+  return {
+    updateMapGun,
+    getBoundBoxArray,
+    getGunSpriteArray,
+    playerCollectGun,
+  };
 };
 
 const GunSprite = function () {
   const horizontalTile = 4;
   const verticalTile = 8;
+  const spriteTexture = "asset/gun.png";
 
   const gun = {
     map: null,
@@ -71,7 +121,7 @@ const GunSprite = function () {
     boundingBox: null,
   };
 
-  const createGun = function (spriteTexture, scene, x, z, offsetX, offsetY) {
+  const createGun = function (scene, x, z, offsetX, offsetY) {
     // Create Gun
     gun.map = new THREE.TextureLoader().load(spriteTexture);
     gun.map.magFilter = THREE.NearestFilter;
@@ -115,12 +165,22 @@ const GunSprite = function () {
     return gun.boundingBox;
   };
 
+  const removeGun = function () {
+    if (gun.sprite && gun.sprite.parent) {
+      gun.sprite.parent.remove(gun.sprite);
+      gun.sprite = null;
+    }
+    gun.boundingBox = null;
+    gun.map = null;
+  };
+
   return {
-    createGun: createGun,
-    attachGunToPlayer: attachGunToPlayer,
-    updateGunPosition: updateGunPosition,
-    getBoundBox: getBoundBox,
+    createGun,
+    attachGunToPlayer,
+    updateGunPosition,
+    getBoundBox,
+    removeGun,
   };
 };
 
-export default GunSpriteArray;
+export { GunSpriteArray, GunSprite };
