@@ -1,4 +1,7 @@
 import * as THREE from "three";
+import Socket from "./socket";
+
+const socket = Socket.getSocket();
 
 const BulletSprite = function () {
   const horizontalTile = 4;

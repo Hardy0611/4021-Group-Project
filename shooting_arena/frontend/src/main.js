@@ -87,20 +87,32 @@ window.addEventListener("keydown", (e) => {
     var direction = playerSprite.getPlayerFacingDirection();
     var position = playerSprite.getPlayerPosition();
     if (playerSprite.getHasGun()) {
-      const bulletSprite = BulletSprite();
-      bulletSprite.createBullet(
-        scene,
-        position.x,
-        position.z,
-        direction,
-        map.getBoundBoxArray()
+      socket.emit(
+        "addBullet",
+        JSON.stringify({
+          direction,
+          initialX: position.x,
+          initialZ: position.z,
+        })
       );
-      bulletSpriteArray.push(bulletSprite);
     }
   } else if (e.key === "d") {
     // Drop the gun
     playerSprite.dropGun();
   }
+});
+
+socket.on("addBullet", (data) => {
+  const bulletInfo = JSON.parse(data);
+  const bulletSprite = BulletSprite();
+  bulletSprite.createBullet(
+    scene,
+    bulletInfo.initialX,
+    bulletInfo.initialZ,
+    bulletInfo.direction,
+    map.getBoundBoxArray()
+  );
+  bulletSpriteArray.push(bulletSprite);
 });
 
 window.addEventListener("keyup", (e) => {

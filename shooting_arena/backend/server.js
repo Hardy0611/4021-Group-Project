@@ -187,6 +187,11 @@ io.on("connection", (socket) => {
       JSON.stringify({ gun, username: info.username })
     );
   });
+
+  socket.on("addBullet", (data) => {
+    const bulletInfo = JSON.parse(data);
+    io.emit("addBullet", JSON.stringify(bulletInfo));
+  });
 });
 
 // serving the backend server
