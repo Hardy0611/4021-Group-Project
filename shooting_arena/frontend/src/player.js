@@ -92,8 +92,10 @@ const PlayerSprite = function (username) {
     boundingBox.setFromObject(player.sprite);
 
     // Temporary increase BB size for easy shooting TO DO: REMOVE OR ADJUST
-    boundingBox.min.z -= 1;
-    boundingBox.max.z += 1;
+    boundingBox.min.z -= 7;
+    boundingBox.max.z += 7;
+    boundingBox.min.x -= 2;
+    boundingBox.max.x += 2;
   };
 
   /**
@@ -278,7 +280,7 @@ const PlayerSprite = function (username) {
   };
 
   const updateGunPosition = function () {
-    if (player.hasGun) {
+    if (player.hasGun && player.gun) {
       player.gun.updateGunPosition(player.facing);
     } else if (player.gun) {
       player.gun.removeGun();
@@ -410,6 +412,14 @@ const PlayerSprite = function (username) {
     }
   };
 
+  const decreaseHealth = function () {
+    player.health -= 1;
+  };
+
+  const increaseHealth = function () {
+    player.health += 1;
+  };
+
   /**
    * PUBLIC API
    */
@@ -435,6 +445,8 @@ const PlayerSprite = function (username) {
     createGun,
     dropGun,
     getFacing,
+    decreaseHealth,
+    increaseHealth,
   };
 };
 

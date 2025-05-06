@@ -40,8 +40,6 @@ const otherPlayers = {};
 const unarmGunArray = GunSpriteArray(scene);
 socket.emit("getGun");
 
-
-
 /**
  * PLAYER STATE MANAGEMENT
  */
@@ -68,7 +66,13 @@ var bulletSpriteArray = [];
 function updateBulletAnimation() {
   const otherPlayerBB = [];
   for (let username in otherPlayers) {
-    otherPlayerBB.push({ username, BB: otherPlayers[username].getBoundBox() });
+    if (username == window.session?.username) {
+      continue;
+    }
+    otherPlayerBB.push({
+      username,
+      BB: otherPlayers[username].getBoundBox(),
+    });
   }
 
   if (bulletSpriteArray.length == 0) return;
@@ -81,6 +85,12 @@ function updateBulletAnimation() {
     console.log(hitPlayerStatus);
 
     // update the hitPlayer
+    if (hitPlayerStatus.currentUser) {
+      playerSprite.decreaseHealth();
+      // TO DO: animation if the current player get hit (camera shake, screen become red)
+    } else if (hitPlayerStatus.hitOtherPlayer) {
+      // TO DO: animation when other player got hit (player jumps up y axis turns red for a few second)
+    }
   }
   bulletSpriteArray.shift();
 }
