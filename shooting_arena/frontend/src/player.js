@@ -91,8 +91,6 @@ const PlayerSprite = function (username) {
       10, // Height above the scene
       player.position.z + 15 // Behind the player
     );
-
-    player.camera.position.set(0, 10, 10);
     player.camera.lookAt(player.position);
 
     // Setup collision detection
