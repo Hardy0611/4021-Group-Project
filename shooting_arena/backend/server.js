@@ -206,6 +206,31 @@ io.on("connection", (socket) => {
     bulletIDCounter += 1;
     io.emit("addBullet", JSON.stringify(bulletInfo));
   });
+
+  socket.on("playerHit", (data) => {
+    const hitInfo = JSON.parse(data);
+    const hitUsername = hitInfo.hitPlayer;
+    
+    // Find the socket of the hit player
+    const hitPlayerSocket = Object.values(io.sockets.sockets).find(
+      (s) => s.request.session.user?.username === hitUsername
+    );
+    
+    // Update the hit player's health in onlineUsers
+    if (onlineUsers[hitUsername]) {
+      onlineUsers[hitUsername].health -= 10; // Decrease health by 10 points
+      
+      // Notify all clients of the updated state
+      io.emit("updateUser", JSON.stringify(onlineUsers));
+      
+      // Notify the hit player specifically
+      if (hitPlayerSocket) {
+        hitPlayerSocket.emit("gotHit", JSON.stringify({
+          fromPlayer: socket.request.session.user?.username
+        }));
+      }
+    }
+  });
 });
 
 // serving the backend server

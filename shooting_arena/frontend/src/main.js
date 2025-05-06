@@ -63,36 +63,91 @@ function getPlayerState() {
 
 // Handle bullet: create, animate, destroy
 var bulletSpriteArray = [];
+// Handle bullet: create, animate, destroy
 function updateBulletAnimation() {
+  // Create array of other player bounding boxes for collision detection
   const otherPlayerBB = [];
   for (let username in otherPlayers) {
-    if (username == window.session?.username) {
-      continue;
+    if (username !== window.currentUser?.username) {
+      const bb = otherPlayers[username].getBoundBox();
+      if (bb) {
+        otherPlayerBB.push({
+          username,
+          BB: bb
+        });
+      }
     }
-    otherPlayerBB.push({
-      username,
-      BB: otherPlayers[username].getBoundBox(),
-    });
   }
 
-  if (bulletSpriteArray.length == 0) return;
-  if (!bulletSpriteArray[0].isDestroy()) {
-    const hitPlayerStatus = bulletSpriteArray[0].moveBullet(
+  // Process all bullets in the array
+  for (let i = bulletSpriteArray.length - 1; i >= 0; i--) {
+    // Skip invalid bullets
+    if (!bulletSpriteArray[i]) {
+      bulletSpriteArray.splice(i, 1);
+      continue;
+    }
+    
+    // Process destroyed bullets
+    if (bulletSpriteArray[i].isDestroy()) {
+      bulletSpriteArray.splice(i, 1);
+      continue;
+    }
+    
+    // Move the bullet and get hit status
+    const hitPlayerStatus = bulletSpriteArray[i].moveBullet(
       playerSprite.getBoundBox(),
       otherPlayerBB
     );
-
-    console.log(hitPlayerStatus);
-
-    // update the hitPlayer
+    
+    // Handle player hits
     if (hitPlayerStatus.currentUser) {
+      // Current player was hit
       playerSprite.decreaseHealth();
-      // TO DO: animation if the current player get hit (camera shake, screen become red)
-    } else if (hitPlayerStatus.hitOtherPlayer) {
-      // TO DO: animation when other player got hit (player jumps up y axis turns red for a few second)
+      
+      // Camera shake effect
+      const originalPosition = camera.position.clone();
+      let shakeIntensity = 0.2;
+      let shakeCount = 0;
+      
+      const shakeInterval = setInterval(() => {
+        if (shakeCount > 5) {
+          clearInterval(shakeInterval);
+          camera.position.copy(originalPosition);
+          return;
+        }
+        
+        camera.position.x += Math.random() * shakeIntensity - shakeIntensity/2;
+        camera.position.y += Math.random() * shakeIntensity - shakeIntensity/2;
+        
+        shakeCount++;
+        shakeIntensity *= 0.9;
+      }, 50);
+      
+      // Screen flash effect
+      const overlay = document.createElement('div');
+      overlay.style.position = 'fixed';
+      overlay.style.top = '0';
+      overlay.style.left = '0';
+      overlay.style.width = '100%';
+      overlay.style.height = '100%';
+      overlay.style.backgroundColor = 'rgba(255, 0, 0, 0.3)';
+      overlay.style.zIndex = '1000';
+      overlay.style.pointerEvents = 'none';
+      
+      document.body.appendChild(overlay);
+      
+      setTimeout(() => {
+        document.body.removeChild(overlay);
+      }, 200);
+      
+      // Remove the bullet
+      bulletSpriteArray.splice(i, 1);
+    } 
+    else if (hitPlayerStatus.hitOtherPlayer) {
+      // Another player was hit - bullet is already removed in moveBullet
+      bulletSpriteArray.splice(i, 1);
     }
   }
-  bulletSpriteArray.shift();
 }
 
 // Cleanup function to remove player from scene
@@ -196,6 +251,19 @@ socket.on("addBullet", (data) => {
     map.getBoundBoxArray()
   );
   bulletSpriteArray.push(bulletSprite);
+});
+
+socket.on("gotHit", (data) => {
+  const hitInfo = JSON.parse(data);
+  
+  // Show visual effects for being hit
+  playerSprite.decreaseHealth();
+  
+  // Camera shake effect
+  shakeCamera();
+  
+  // Screen flash effect
+  flashScreen();
 });
 
 /**

@@ -1,14 +1,20 @@
 import * as THREE from "three";
-import Socket from "./socket";
-
-const socket = Socket.getSocket();
+import Socket from "./socket.js";
 
 const BulletSprite = function () {
+  // Socket reference 
+  const socket = Socket.getSocket();
+  
+  // Sprite configuration
   const horizontalTile = 4;
   const verticalTile = 1;
   const bulletLocation = { right: 0, left: 0.25, up: 0.5, down: 0.75 };
   const spriteTexture = "asset/bullet.png";
-
+  
+  // Sound effect
+  const bulletShootAudio = new Audio("sound/shoot_bullet.mp3");
+  
+  // Bullet state variables
   var boundingBox = null;
   var mapBBArray = null;
   const bullet = {
@@ -20,38 +26,62 @@ const BulletSprite = function () {
     initialX: null,
     initialZ: null,
     destroy: false,
+    creationTime: null
   };
 
-  const bulletShootAudio = new Audio("sound/shoot_bullet.mp3");
-
+  /**
+   * Creates a bullet sprite and adds it to the scene
+   * @param {string} id - Unique ID for this bullet
+   * @param {THREE.Scene} scene - The scene to add the bullet to
+   * @param {number} x - Initial X position
+   * @param {number} z - Initial Z position
+   * @param {string} direction - Direction: 'left', 'right', 'up', 'down'
+   * @param {Array} mapBB - Array of map bounding boxes for collision detection
+   */
   const createBullet = function (id, scene, x, z, direction, mapBB) {
+    // Don't create if already destroyed
     if (bullet.destroy) return;
+    
+    // Store map collision data
     mapBBArray = mapBB;
-
+    
+    // Play sound effect
     if (bulletShootAudio) {
-      bulletShootAudio.play();
+      bulletShootAudio.currentTime = 0; // Reset to start
+      bulletShootAudio.play().catch(e => console.log("Audio play failed:", e));
     }
 
-    // Create Bullet
+    // Store bullet ID
+    bullet.id = id;
+    
+    // Set creation time for lifespan calculation
+    bullet.creationTime = Date.now();
+
+    // Create sprite texture
     bullet.map = new THREE.TextureLoader().load(spriteTexture);
     bullet.map.magFilter = THREE.NearestFilter;
     bullet.map.repeat.set(1 / horizontalTile, 1 / verticalTile);
-
+    
+    // Set texture offset based on direction
     bullet.map.offset.x = bulletLocation[direction];
     bullet.map.offset.y = 0;
 
+    // Create sprite material with the texture
     const spriteMaterial = new THREE.SpriteMaterial({
       map: bullet.map,
       transparent: true,
     });
 
+    // Create the sprite with the material
     bullet.sprite = new THREE.Sprite(spriteMaterial);
     bullet.sprite.scale.set(0.75, 0.75, 1);
 
+    // Set initial position
     var initialX = x;
     var initialZ = z;
     var initialY = 1;
 
+    // Adjust start position based on direction (offset from player)
     const bulletOffset = 2;
     switch (direction) {
       case "left":
@@ -74,69 +104,56 @@ const BulletSprite = function () {
         break;
     }
 
+    // Set the sprite position and add to scene
     bullet.sprite.position.set(initialX, initialY, initialZ);
-
     scene.add(bullet.sprite);
 
+    // Store direction and initial position
     bullet.direction = direction;
     bullet.initialX = initialX;
     bullet.initialZ = initialZ;
 
-    // Create Bounding box
-    boundingBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
-    boundingBox.setFromObject(bullet.sprite);
-    boundingBox.min.z -= 1;
-    boundingBox.max.z += 1;
+    // Create and configure bounding box for collision detection
+    boundingBox = new THREE.Box3();
+    updateBoundingBox();
   };
 
+  /**
+   * Update the bullet's bounding box based on its current position
+   */
+  const updateBoundingBox = function() {
+    if (!bullet.sprite || bullet.destroy) return;
+    
+    // Create a new bounding box around the sprite
+    boundingBox = new THREE.Box3().setFromObject(bullet.sprite);
+    
+    // Expand the bounding box slightly to improve hit detection
+    boundingBox.min.x -= 0.5;
+    boundingBox.max.x += 0.5;
+    boundingBox.min.z -= 0.5;
+    boundingBox.max.z += 0.5;
+  };
+
+  /**
+   * Remove the bullet from the scene and clean up
+   */
   const removeBullet = function () {
     bullet.destroy = true;
     if (bullet.sprite && bullet.sprite.parent) {
-      bullet.sprite.parent.remove(bullet.sprite); // Remove the sprite from the scene
-      bullet.sprite = null; // Clear the reference
+      bullet.sprite.parent.remove(bullet.sprite);
+      bullet.sprite = null;
     }
     boundingBox = null;
     mapBBArray = null;
   };
 
-  const hitPlayer = function (currentPlayerBB, otherPlayerBB) {
-    if (bullet.destroy || !currentPlayerBB || !otherPlayerBB) {
-      return {
-        hitCurrentPlayer: false,
-        hitOtherPlayer: false,
-        otherPlayerUsername: null,
-      };
-    }
-
-    if (boundingBox.intersectsBox(currentPlayerBB)) {
-      removeBullet();
-      return {
-        hitCurrentPlayer: true,
-        hitOtherPlayer: false,
-        otherPlayerUsername: null,
-      };
-    }
-
-    for (let i = 0; i < otherPlayerBB.length; i++) {
-      if (boundingBox.intersectsBox(otherPlayerBB[i].BB)) {
-        removeBullet();
-        return {
-          hitCurrentPlayer: false,
-          hitOtherPlayer: true,
-          otherPlayerUsername: otherPlayerBB[i].username,
-        };
-      }
-    }
-
-    return {
-      hitCurrentPlayer: false,
-      hitOtherPlayer: false,
-      otherPlayerUsername: null,
-    };
-  };
-
+  /**
+   * Check if the bullet has collided with any map objects
+   * @returns {boolean} True if the bullet hit an object
+   */
   const collideObject = function () {
     if (bullet.destroy || !mapBBArray || !boundingBox) return false;
+    
     for (let i = 0; i < mapBBArray.length; i++) {
       if (boundingBox.intersectsBox(mapBBArray[i])) {
         removeBullet();
@@ -146,92 +163,133 @@ const BulletSprite = function () {
     return false;
   };
 
+  /**
+   * Move the bullet and check for collisions
+   * @param {THREE.Box3} currentPlayerBB - Bounding box of the current player
+   * @param {Array} otherPlayerBB - Array of other players' bounding boxes
+   * @returns {Object} Hit status information
+   */
   const moveBullet = function (currentPlayerBB, otherPlayerBB) {
-    if (bullet.destroy) return;
-    const duration = 500;
-    const startTime = Date.now();
-    var hitPlayerStatus = {
-      hitCurrentPlayer: false,
-      hitOtherPlayer: false,
-      otherPlayerUsername: null,
-    };
+    // Don't process if already destroyed
+    if (bullet.destroy) {
+      return {
+        currentUser: false,
+        hitOtherPlayer: false,
+        otherPlayerUsername: null
+      };
+    }
+    
+    // Check bullet lifetime (destroy after 1.5 seconds)
+    const currentTime = Date.now();
+    if (bullet.creationTime && (currentTime - bullet.creationTime > 1500)) {
+      removeBullet();
+      return {
+        currentUser: false,
+        hitOtherPlayer: false,
+        otherPlayerUsername: null
+      };
+    }
+    
+    // Move the bullet based on direction
+    switch (bullet.direction) {
+      case "left":
+        bullet.initialX -= bullet.speed;
+        break;
+      case "up":
+        bullet.initialZ -= bullet.speed;
+        break;
+      case "right":
+        bullet.initialX += bullet.speed;
+        break;
+      case "down":
+        bullet.initialZ += bullet.speed;
+        break;
+    }
 
-    const updateBulletPosition = () => {
-      const elapsedTime = Date.now() - startTime;
-
-      if (elapsedTime < duration && !bullet.destroy) {
-        if (collideObject()) {
-          clearInterval(intervalId);
-          return;
+    // Update sprite position
+    if (bullet.sprite) {
+      bullet.sprite.position.set(
+        bullet.initialX,
+        bullet.sprite.position.y,
+        bullet.initialZ
+      );
+      
+      // Update bounding box after movement
+      updateBoundingBox();
+    }
+    
+    // Check for collision with environment
+    if (collideObject()) {
+      return {
+        currentUser: false,
+        hitOtherPlayer: false,
+        otherPlayerUsername: null
+      };
+    }
+    
+    // Check if bullet hit the current player
+    if (currentPlayerBB && boundingBox && boundingBox.intersectsBox(currentPlayerBB)) {
+      removeBullet();
+      return {
+        currentUser: true,
+        hitOtherPlayer: false,
+        otherPlayerUsername: null
+      };
+    }
+    
+    // Check if bullet hit any other players
+    if (otherPlayerBB && otherPlayerBB.length > 0) {
+      for (let i = 0; i < otherPlayerBB.length; i++) {
+        if (boundingBox && otherPlayerBB[i].BB && boundingBox.intersectsBox(otherPlayerBB[i].BB)) {
+          // Notify server about the hit
+          if (socket) {
+            socket.emit("playerHit", JSON.stringify({
+              hitPlayer: otherPlayerBB[i].username
+            }));
+          }
+          console.log("Hit player:", otherPlayerBB[i].username)
+          
+          removeBullet();
+          return {
+            currentUser: false,
+            hitOtherPlayer: true,
+            otherPlayerUsername: otherPlayerBB[i].username
+          };
         }
-
-        // Calculate the new position
-        switch (bullet.direction) {
-          case "left":
-            bullet.initialX -= bullet.speed;
-            break;
-          case "up":
-            bullet.initialZ -= bullet.speed;
-            break;
-          case "right":
-            bullet.initialX += bullet.speed;
-            break;
-          case "down":
-            bullet.initialZ += bullet.speed;
-            break;
-        }
-
-        // Update the bullet sprite's position
-        bullet.sprite.position.set(
-          bullet.initialX,
-          bullet.sprite.position.y,
-          bullet.initialZ
-        );
-
-        // Update bounding box
-        if (boundingBox) {
-          boundingBox
-            .copy(bullet.sprite.geometry.boundingBox)
-            .applyMatrix4(bullet.sprite.matrixWorld);
-        }
-
-        hitPlayerStatus = hitPlayer(currentPlayerBB, otherPlayerBB);
-        console.log(hitPlayerStatus);
-        if (
-          hitPlayerStatus.hitCurrentPlayer ||
-          hitPlayerStatus.hitOtherPlayer
-        ) {
-          clearInterval(intervalId);
-          return;
-        }
-      } else {
-        // Stop moving the bullet after 5 seconds
-        clearInterval(intervalId);
-        removeBullet();
       }
+    }
+    
+    // No hits
+    return {
+      currentUser: false,
+      hitOtherPlayer: false,
+      otherPlayerUsername: null
     };
-
-    // Start the movement loop
-    const intervalId = setInterval(updateBulletPosition, 1000 / 60);
-
-    return hitPlayerStatus;
   };
 
+  /**
+   * Checks if the bullet has been destroyed
+   * @returns {boolean} True if the bullet is destroyed
+   */
   const isDestroy = function () {
     return bullet.destroy;
   };
 
+  /**
+   * Gets the bullet's ID
+   * @returns {string} Bullet ID
+   */
   const getID = function () {
     return bullet.id;
   };
 
+  // Public API
   return {
     createBullet,
     removeBullet,
     moveBullet,
     isDestroy,
-    hitPlayer,
-    getID,
+    getID
   };
 };
 

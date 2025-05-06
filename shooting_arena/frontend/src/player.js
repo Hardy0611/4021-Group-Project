@@ -98,10 +98,10 @@ const PlayerSprite = function (username) {
     boundingBox.setFromObject(player.sprite);
 
     // Temporary increase BB size for easy shooting TO DO: REMOVE OR ADJUST
-    boundingBox.min.z -= 7;
-    boundingBox.max.z += 7;
-    boundingBox.min.x -= 2;
-    boundingBox.max.x += 2;
+    boundingBox.min.z -= 1;
+    boundingBox.max.z += 1;
+    boundingBox.min.x -= 0;
+    boundingBox.max.x += 0;
   };
 
   /**
