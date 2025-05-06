@@ -22,9 +22,15 @@ const BulletSprite = function () {
     destroy: false,
   };
 
+  const bulletShootAudio = new Audio("sound/shoot_bullet.mp3");
+
   const createBullet = function (id, scene, x, z, direction, mapBB) {
     if (bullet.destroy) return;
     mapBBArray = mapBB;
+
+    if (bulletShootAudio) {
+      bulletShootAudio.play();
+    }
 
     // Create Bullet
     bullet.map = new THREE.TextureLoader().load(spriteTexture);

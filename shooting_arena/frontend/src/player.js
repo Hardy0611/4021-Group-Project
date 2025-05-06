@@ -24,6 +24,7 @@ const PlayerSprite = function (username) {
     moveDown: { uv: { u: 0, v: 0.375 }, count: 10, timing: 50 },
   };
 
+  const dropGunAudio = new Audio("sound/collect_gun.mov");
   // Sprite sheet configuration
   const horizontalTile = 10;
   const verticalTile = 8;
@@ -341,6 +342,9 @@ const PlayerSprite = function (username) {
 
   const dropGun = function () {
     if (player.hasGun) {
+      if (dropGunAudio) {
+        dropGunAudio.play();
+      }
       player.hasGun = false;
       player.gun.removeGun();
       player.gun = null;

@@ -5,6 +5,7 @@ const socket = Socket.getSocket();
 
 const GunSpriteArray = function (scene) {
   var gunsArray = [];
+  const collectGunAudio = new Audio("sound/collect_gun.mov");
 
   socket.on("updateGun", (data) => {
     const gunPositionArray = JSON.parse(data);
@@ -70,6 +71,10 @@ const GunSpriteArray = function (scene) {
   };
 
   const playerCollectGun = function (id, playerSprite, username) {
+    if (collectGunAudio) {
+      collectGunAudio.play();
+    }
+
     // Remove from gunsArray
     var toBeRemoveGun = gunsArray.filter((gun) => gun.id == id);
 
