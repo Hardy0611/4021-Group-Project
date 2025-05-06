@@ -52,7 +52,7 @@ const BulletSprite = function () {
     var initialZ = z;
     var initialY = 1;
 
-    const bulletOffset = 1.5;
+    const bulletOffset = 2;
     switch (direction) {
       case "left":
         initialX -= bulletOffset;
@@ -100,7 +100,14 @@ const BulletSprite = function () {
   };
 
   const hitPlayer = function (currentPlayerBB, otherPlayerBB) {
-    if (bullet.destroy || !currentPlayerBB || !otherPlayerBB) return false;
+    if (bullet.destroy || !currentPlayerBB || !otherPlayerBB) {
+      return {
+        hitCurrentPlayer: false,
+        hitOtherPlayer: false,
+        otherPlayerUsername: null,
+      };
+    }
+
     if (boundingBox.intersectsBox(currentPlayerBB)) {
       removeBullet();
       return {
