@@ -5,6 +5,7 @@ const socket = Socket.getSocket();
 
 const GunSpriteArray = function (scene) {
   var gunsArray = [];
+  const collectGunAudio = new Audio("sound/collect_gun.mov");
 
   socket.on("updateGun", (data) => {
     const gunPositionArray = JSON.parse(data);
@@ -70,6 +71,10 @@ const GunSpriteArray = function (scene) {
   };
 
   const playerCollectGun = function (id, playerSprite, username) {
+    if (collectGunAudio) {
+      collectGunAudio.play();
+    }
+
     // Remove from gunsArray
     var toBeRemoveGun = gunsArray.filter((gun) => gun.id == id);
 
@@ -152,12 +157,29 @@ const GunSprite = function () {
     gun.attachedPlayer = playerSprite;
   };
 
-  const updateGunPosition = function () {
+  const updateGunPosition = function (facing) {
     if (gun.attachedPlayer) {
       // Update the gun's position to follow the player
-      gun.sprite.position
-        .copy(gun.attachedPlayer.position)
-        .add(new THREE.Vector3(0, 0, 1)); // Adjust as needed
+      gun.sprite.position.copy(gun.attachedPlayer.position);
+
+      switch (facing) {
+        case "right":
+          gun.map.offset.x = 0;
+          gun.sprite.position.add(new THREE.Vector3(0.4, -0.3, 0.5));
+          break;
+        case "left":
+          gun.map.offset.x = 0.25;
+          gun.sprite.position.add(new THREE.Vector3(-0.75, -0.3, -0.1));
+          break;
+        case "down":
+          gun.map.offset.x = 0.5;
+          gun.sprite.position.add(new THREE.Vector3(-0.5, -0.5, -0.25));
+          break;
+        case "up":
+          gun.map.offset.x = 0.75;
+          gun.sprite.position.add(new THREE.Vector3(0.5, 0, -0.25));
+          break;
+      }
     }
   };
 

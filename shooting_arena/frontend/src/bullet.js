@@ -22,9 +22,15 @@ const BulletSprite = function () {
     destroy: false,
   };
 
+  const bulletShootAudio = new Audio("sound/shoot_bullet.mp3");
+
   const createBullet = function (id, scene, x, z, direction, mapBB) {
     if (bullet.destroy) return;
     mapBBArray = mapBB;
+
+    if (bulletShootAudio) {
+      bulletShootAudio.play();
+    }
 
     // Create Bullet
     bullet.map = new THREE.TextureLoader().load(spriteTexture);
@@ -39,28 +45,36 @@ const BulletSprite = function () {
       transparent: true,
     });
 
+    bullet.sprite = new THREE.Sprite(spriteMaterial);
+    bullet.sprite.scale.set(0.75, 0.75, 1);
+
     var initialX = x;
     var initialZ = z;
+    var initialY = 1;
 
     const bulletOffset = 1.5;
     switch (direction) {
       case "left":
         initialX -= bulletOffset;
+        initialY += 0.45;
         break;
       case "right":
         initialX += bulletOffset;
+        initialY += 0;
         break;
       case "up":
         initialZ -= bulletOffset;
+        initialX += 0.6;
+        initialY += 0;
         break;
       case "down":
         initialZ += bulletOffset;
+        initialX -= 0.75;
+        initialY += 0;
         break;
     }
 
-    bullet.sprite = new THREE.Sprite(spriteMaterial);
-    bullet.sprite.scale.set(0.75, 0.75, 1);
-    bullet.sprite.position.set(initialX, 1, initialZ);
+    bullet.sprite.position.set(initialX, initialY, initialZ);
 
     scene.add(bullet.sprite);
 
