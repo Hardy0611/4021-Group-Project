@@ -24,6 +24,9 @@ const SignInForm = (function () {
         (user) => {
           window.currentUser = user;
           hide();
+          
+          // Show the logout button once signed in
+          $("#logout-button").show();
 
           Socket.connect("http://localhost:3000/", () => {
             import("./main.js").then(() => {
@@ -65,6 +68,34 @@ const SignInForm = (function () {
         }
       );
     });
+    
+    // Setup logout button functionality
+    $("#logout-button").on("click", handleLogout);
+  };
+
+  // Function to handle logout
+  const handleLogout = function() {
+    Authentication.signout(
+      () => {
+        // Hide logout button
+        $("#logout-button").hide();
+        
+        // Disconnect socket
+        Socket.disconnect();
+        
+        // Reset current user
+        window.currentUser = null;
+        
+        // Show login form
+        show();
+        
+        // Reload the page to reset game state
+        location.reload();
+      },
+      (error) => {
+        console.error("Logout failed:", error);
+      }
+    );
   };
 
   // This function shows the form
@@ -80,7 +111,7 @@ const SignInForm = (function () {
     $("#signin-overlay").fadeOut(500);
   };
 
-  return { initialize, show, hide };
+  return { initialize, show, hide, handleLogout };
 })();
 
 const UI = (function () {

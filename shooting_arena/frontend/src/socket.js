@@ -18,6 +18,7 @@ const Socket = (function () {
     if (socket) {
       socket.disconnect();
       socket = null;
+      console.log("Socket disconnected");
     }
   };
   const getSocket = function () {

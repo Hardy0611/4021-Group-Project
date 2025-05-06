@@ -226,3 +226,22 @@ button.icon:active {
   font-weight: 600;
   font-style: normal;
 }
+
+/* Logout button styling */
+#logout-button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  padding: 10px 15px;
+  background-color: #ffc862;
+  color: #684701;
+  border: 5px double #ca8a04;
+  cursor: pointer;
+  z-index: 100;
+  font-size: 1rem;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.4);
+}
+
+#logout-button:hover {
+  background-color: #ffb224;
+}
