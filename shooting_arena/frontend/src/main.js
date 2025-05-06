@@ -40,6 +40,8 @@ const otherPlayers = {};
 const unarmGunArray = GunSpriteArray(scene);
 socket.emit("getGun");
 
+
+
 /**
  * PLAYER STATE MANAGEMENT
  */
@@ -82,6 +84,20 @@ function updateBulletAnimation() {
   }
   bulletSpriteArray.shift();
 }
+
+// Cleanup function to remove player from scene
+function cleanupPlayer(username) {
+  if (otherPlayers[username]) {
+    const sprite = otherPlayers[username].getPlayerSprite();
+    if (sprite) {
+      scene.remove(sprite);
+    }
+    delete otherPlayers[username];
+    console.log("Player removed:", username);
+  }
+}
+
+window.cleanupPlayer = cleanupPlayer;
 
 /**
  * INPUT HANDLING
@@ -153,9 +169,7 @@ Socket.onUpdateUsers((users) => {
   // Remove players who left the game
   Object.keys(otherPlayers).forEach((username) => {
     if (!users[username]) {
-      scene.remove(otherPlayers[username].sprite);
-      delete otherPlayers[username];
-      console.log("Player left:", username);
+      cleanupPlayer(username);
     }
   });
 });
