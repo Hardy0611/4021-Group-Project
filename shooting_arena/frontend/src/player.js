@@ -44,11 +44,12 @@ const PlayerSprite = function (username) {
     sprite: null,
     sequence: sequences.idleDown,
     animationSpeed: 0.1,
-    health: 100,
+    health: 3,
     direction: "idle", // 'up', 'down', 'left', 'right', 'idle
     facing: "down",
     hasGun: false,
     gun: null,
+    ammo: 0,
   };
 
   /**
@@ -283,6 +284,7 @@ const PlayerSprite = function (username) {
   const updateGunStatus = function (gunForPlayer) {
     player.hasGun = true;
     player.gun = gunForPlayer;
+    player.ammo = 16;
   };
 
   const updateGunPosition = function () {
@@ -338,6 +340,14 @@ const PlayerSprite = function (username) {
     return player.facing;
   };
 
+  const getAmmo = function () {
+    if (player.hasGun) {
+      return player.ammo;
+    } else {
+      return 0;
+    }
+  };
+
   // Handle player's gun
   const createGun = function (scene, gunInfo) {
     player.gun = GunSprite();
@@ -360,6 +370,7 @@ const PlayerSprite = function (username) {
       player.hasGun = false;
       player.gun.removeGun();
       player.gun = null;
+      player.ammo = 0;
     }
   };
 
@@ -426,6 +437,17 @@ const PlayerSprite = function (username) {
     player.health += 1;
   };
 
+  const decreaseAmmo = function () {
+    if (player.ammo <= 0) {
+      player.hasGun = false;
+      player.gun.removeGun();
+      player.gun = null;
+      player.ammo = 0;
+    } else if (player.hasGun) {
+      player.ammo -= 1;
+    }
+  };
+
   /**
    * PUBLIC API
    */
@@ -453,6 +475,8 @@ const PlayerSprite = function (username) {
     getFacing,
     decreaseHealth,
     increaseHealth,
+    getAmmo,
+    decreaseAmmo,
   };
 };
 
