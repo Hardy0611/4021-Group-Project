@@ -2,18 +2,18 @@ import * as THREE from "three";
 import Socket from "./socket.js";
 
 const BulletSprite = function () {
-  // Socket reference 
+  // Socket reference
   const socket = Socket.getSocket();
-  
+
   // Sprite configuration
   const horizontalTile = 4;
   const verticalTile = 1;
   const bulletLocation = { right: 0, left: 0.25, up: 0.5, down: 0.75 };
   const spriteTexture = "asset/bullet.png";
-  
+
   // Sound effect
   const bulletShootAudio = new Audio("sound/shoot_bullet.mp3");
-  
+
   // Bullet state variables
   var boundingBox = null;
   var mapBBArray = null;
@@ -26,7 +26,7 @@ const BulletSprite = function () {
     initialX: null,
     initialZ: null,
     destroy: false,
-    creationTime: null
+    creationTime: null,
   };
 
   /**
@@ -37,23 +37,37 @@ const BulletSprite = function () {
    * @param {number} z - Initial Z position
    * @param {string} direction - Direction: 'left', 'right', 'up', 'down'
    * @param {Array} mapBB - Array of map bounding boxes for collision detection
+   * @param {boolean} isLocalPlayer - Whether this bullet was fired by the local player
    */
-  const createBullet = function (id, scene, x, z, direction, mapBB) {
+  const createBullet = function (
+    id,
+    scene,
+    x,
+    z,
+    direction,
+    mapBB,
+    isLocalPlayer = false
+  ) {
     // Don't create if already destroyed
     if (bullet.destroy) return;
-    
+
     // Store map collision data
     mapBBArray = mapBB;
-    
+
+    // Flag to determine if this bullet came from current player
+    bullet.isCurrentPlayerBullet = isLocalPlayer;
+
     // Play sound effect
     if (bulletShootAudio) {
       bulletShootAudio.currentTime = 0; // Reset to start
-      bulletShootAudio.play().catch(e => console.log("Audio play failed:", e));
+      bulletShootAudio
+        .play()
+        .catch((e) => console.log("Audio play failed:", e));
     }
 
     // Store bullet ID
     bullet.id = id;
-    
+
     // Set creation time for lifespan calculation
     bullet.creationTime = Date.now();
 
@@ -61,7 +75,7 @@ const BulletSprite = function () {
     bullet.map = new THREE.TextureLoader().load(spriteTexture);
     bullet.map.magFilter = THREE.NearestFilter;
     bullet.map.repeat.set(1 / horizontalTile, 1 / verticalTile);
-    
+
     // Set texture offset based on direction
     bullet.map.offset.x = bulletLocation[direction];
     bullet.map.offset.y = 0;
@@ -121,12 +135,12 @@ const BulletSprite = function () {
   /**
    * Update the bullet's bounding box based on its current position
    */
-  const updateBoundingBox = function() {
+  const updateBoundingBox = function () {
     if (!bullet.sprite || bullet.destroy) return;
-    
+
     // Create a new bounding box around the sprite
     boundingBox = new THREE.Box3().setFromObject(bullet.sprite);
-    
+
     // Expand the bounding box slightly to improve hit detection
     boundingBox.min.x -= 0.5;
     boundingBox.max.x += 0.5;
@@ -153,7 +167,7 @@ const BulletSprite = function () {
    */
   const collideObject = function () {
     if (bullet.destroy || !mapBBArray || !boundingBox) return false;
-    
+
     for (let i = 0; i < mapBBArray.length; i++) {
       if (boundingBox.intersectsBox(mapBBArray[i])) {
         removeBullet();
@@ -175,21 +189,21 @@ const BulletSprite = function () {
       return {
         currentUser: false,
         hitOtherPlayer: false,
-        otherPlayerUsername: null
+        otherPlayerUsername: null,
       };
     }
-    
+
     // Check bullet lifetime (destroy after 1.5 seconds)
     const currentTime = Date.now();
-    if (bullet.creationTime && (currentTime - bullet.creationTime > 1500)) {
+    if (bullet.creationTime && currentTime - bullet.creationTime > 1500) {
       removeBullet();
       return {
         currentUser: false,
         hitOtherPlayer: false,
-        otherPlayerUsername: null
+        otherPlayerUsername: null,
       };
     }
-    
+
     // Move the bullet based on direction
     switch (bullet.direction) {
       case "left":
@@ -213,57 +227,70 @@ const BulletSprite = function () {
         bullet.sprite.position.y,
         bullet.initialZ
       );
-      
+
       // Update bounding box after movement
       updateBoundingBox();
     }
-    
+
     // Check for collision with environment
     if (collideObject()) {
       return {
         currentUser: false,
         hitOtherPlayer: false,
-        otherPlayerUsername: null
+        otherPlayerUsername: null,
       };
     }
-    
-    // Check if bullet hit the current player
-    if (currentPlayerBB && boundingBox && boundingBox.intersectsBox(currentPlayerBB)) {
+
+    // Check if bullet hit the current player - ONLY for bullets fired by others
+    if (
+      currentPlayerBB &&
+      boundingBox &&
+      !bullet.isCurrentPlayerBullet &&
+      boundingBox.intersectsBox(currentPlayerBB)
+    ) {
       removeBullet();
       return {
         currentUser: true,
         hitOtherPlayer: false,
-        otherPlayerUsername: null
+        otherPlayerUsername: null,
       };
     }
-    
+
     // Check if bullet hit any other players
     if (otherPlayerBB && otherPlayerBB.length > 0) {
       for (let i = 0; i < otherPlayerBB.length; i++) {
-        if (boundingBox && otherPlayerBB[i].BB && boundingBox.intersectsBox(otherPlayerBB[i].BB)) {
-          // Notify server about the hit
-          if (socket) {
-            socket.emit("playerHit", JSON.stringify({
-              hitPlayer: otherPlayerBB[i].username
-            }));
+        if (
+          boundingBox &&
+          otherPlayerBB[i].BB &&
+          boundingBox.intersectsBox(otherPlayerBB[i].BB)
+        ) {
+          // Only emit playerHit if this is a bullet from the current player
+          // This prevents multiple players from emitting hit events for the same collision
+          if (socket && bullet.isCurrentPlayerBullet) {
+            socket.emit(
+              "playerHit",
+              JSON.stringify({
+                hitPlayer: otherPlayerBB[i].username,
+              })
+            );
+            console.log("Hit player:", otherPlayerBB[i].username);
           }
-          console.log("Hit player:", otherPlayerBB[i].username)
-          
+
           removeBullet();
           return {
             currentUser: false,
             hitOtherPlayer: true,
-            otherPlayerUsername: otherPlayerBB[i].username
+            otherPlayerUsername: otherPlayerBB[i].username,
           };
         }
       }
     }
-    
+
     // No hits
     return {
       currentUser: false,
       hitOtherPlayer: false,
-      otherPlayerUsername: null
+      otherPlayerUsername: null,
     };
   };
 
@@ -289,7 +316,7 @@ const BulletSprite = function () {
     removeBullet,
     moveBullet,
     isDestroy,
-    getID
+    getID,
   };
 };
 

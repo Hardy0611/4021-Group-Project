@@ -45,10 +45,11 @@ const PlayerSprite = function (username) {
     sequence: sequences.idleDown,
     animationSpeed: 0.1,
     health: 100,
-    direction: "idle", // 'up', 'down', 'left', 'right', 'idle
+    direction: "idle",
     facing: "down",
     hasGun: false,
     gun: null,
+    isHit: false, // Add this flag
   };
 
   /**
@@ -128,6 +129,17 @@ const PlayerSprite = function (username) {
       player.map.offset.x = index / horizontalTile;
       player.map.offset.y = player.sequence.uv.v;
       lastUpdate = time;
+    }
+    // Always ensure the player returns to normal color after hit animation
+    if (
+      !player.isHit &&
+      player.sprite &&
+      player.sprite.material &&
+      player.sprite.material.color.r > 0.8 &&
+      player.sprite.material.color.g < 0.5
+    ) {
+      // Reset to white if we detect it's still red
+      player.sprite.material.color.set(0xffffff);
     }
   };
 
@@ -420,10 +432,73 @@ const PlayerSprite = function (username) {
 
   const decreaseHealth = function () {
     player.health -= 1;
+
+    // Play hit animation for the player who got hit
+    playHitAnimation();
   };
 
   const increaseHealth = function () {
     player.health += 1;
+  };
+
+  /**
+   * Plays a shake animation when the player is hit
+   */
+  const playHitAnimation = function () {
+    if (!player.sprite) return;
+
+    console.log("Hit animation playing for", username);
+    player.isHit = true;
+
+    // Store original position for shake animation
+    const originalPosition = {
+      x: player.sprite.position.x,
+      y: player.sprite.position.y,
+    };
+
+    // Shake parameters
+    let shakeCount = 0;
+    let shakeIntensity = 0.15;
+
+    // Perform the shake animation
+    const shakeInterval = setInterval(() => {
+      if (shakeCount >= 5) {
+        clearInterval(shakeInterval);
+        if (player.sprite) {
+          // Reset to original position
+          player.sprite.position.x = originalPosition.x;
+          player.sprite.position.y = originalPosition.y;
+        }
+        return;
+      }
+
+      if (player.sprite) {
+        // Apply random offset for shake effect
+        player.sprite.position.x =
+          originalPosition.x +
+          (Math.random() * shakeIntensity - shakeIntensity / 2);
+        player.sprite.position.y =
+          originalPosition.y +
+          (Math.random() * shakeIntensity - shakeIntensity / 2);
+      }
+
+      shakeCount++;
+      shakeIntensity *= 0.8;
+    }, 50);
+
+    // Flash the sprite red
+    if (player.sprite && player.sprite.material) {
+      // Change to red
+      player.sprite.material.color.set(0xff0000);
+
+      // Reset to white (default material color) after a delay
+      setTimeout(() => {
+        if (player.sprite && player.sprite.material) {
+          player.sprite.material.color.set(0xffffff);
+          player.isHit = false;
+        }
+      }, 300);
+    }
   };
 
   /**
@@ -453,6 +528,7 @@ const PlayerSprite = function (username) {
     getFacing,
     decreaseHealth,
     increaseHealth,
+    playHitAnimation,
   };
 };
 

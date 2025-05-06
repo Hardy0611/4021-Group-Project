@@ -202,33 +202,63 @@ io.on("connection", (socket) => {
 
   socket.on("addBullet", (data) => {
     const bulletInfo = JSON.parse(data);
-    bulletInfo["id"] = bulletIDCounter;
-    bulletIDCounter += 1;
-    io.emit("addBullet", JSON.stringify(bulletInfo));
+    const bulletID = bulletIDCounter++;
+    
+    // Add shooter's ID to the bullet info
+    const bulletData = {
+      id: bulletID,
+      shooterID: socket.id,  // Add this line
+      direction: bulletInfo.direction,
+      initialX: bulletInfo.initialX,
+      initialZ: bulletInfo.initialZ
+    };
+    
+    // Broadcast bullet to all clients
+    io.emit("addBullet", JSON.stringify(bulletData));
   });
 
   socket.on("playerHit", (data) => {
     const hitInfo = JSON.parse(data);
     const hitUsername = hitInfo.hitPlayer;
     
-    // Find the socket of the hit player
-    const hitPlayerSocket = Object.values(io.sockets.sockets).find(
-      (s) => s.request.session.user?.username === hitUsername
-    );
+    console.log(`Player ${socket.request.session.user?.username} hit player ${hitUsername}`);
     
     // Update the hit player's health in onlineUsers
     if (onlineUsers[hitUsername]) {
-      onlineUsers[hitUsername].health -= 10; // Decrease health by 10 points
+      // Decrease health by 10 points
+      onlineUsers[hitUsername].health -= 10;
+      
+      // Add a "hitAnimation" flag to the player state to indicate they're being hit
+      onlineUsers[hitUsername].hitAnimation = Date.now();
+      console.log(`Added hitAnimation flag to ${hitUsername}`);
       
       // Notify all clients of the updated state
       io.emit("updateUser", JSON.stringify(onlineUsers));
       
+      // Find the socket of the hit player to notify them directly
+      const hitPlayerSocket = Object.values(io.sockets.sockets).find(
+        (s) => s.request.session.user?.username === hitUsername
+      );
+      
       // Notify the hit player specifically
       if (hitPlayerSocket) {
+        console.log(`Sending direct gotHit event to ${hitUsername}`);
         hitPlayerSocket.emit("gotHit", JSON.stringify({
           fromPlayer: socket.request.session.user?.username
         }));
+      } else {
+        console.log(`Could not find socket for ${hitUsername}`);
       }
+      
+      // Clear the hit animation flag after a short delay
+      setTimeout(() => {
+        if (onlineUsers[hitUsername]) {
+          delete onlineUsers[hitUsername].hitAnimation;
+          io.emit("updateUser", JSON.stringify(onlineUsers));
+        }
+      }, 500);
+    } else {
+      console.log(`Player ${hitUsername} not found in onlineUsers`);
     }
   });
 });
