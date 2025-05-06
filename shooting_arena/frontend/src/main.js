@@ -59,6 +59,7 @@ function getPlayerState() {
     direction: playerSprite.getPlayerDirection(),
     hasGun: playerSprite.getHasGun(),
     health: playerSprite.getPlayerHealth(),
+    facing: playerSprite.getFacing(),
   };
 }
 
