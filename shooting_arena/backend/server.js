@@ -153,6 +153,16 @@ io.on("connection", (socket) => {
     io.emit("updateUser", JSON.stringify(onlineUsers));
   }
 
+  // Handle explicit user logout
+  socket.on("userLogout", (username) => {
+    if (username && onlineUsers[username]) {
+      delete onlineUsers[username];
+      console.log(`User ${username} logged out`);
+      // Broadcast user list update to all clients
+      io.emit("updateUser", JSON.stringify(onlineUsers));
+    }
+  });
+
   // Handle user disconnection
   socket.on("disconnect", () => {
     if (user) {

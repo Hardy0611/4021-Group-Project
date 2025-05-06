@@ -3,10 +3,33 @@ import Registration from "./registration.js";
 import Socket from "./socket.js";
 
 const SignInForm = (function () {
+  // This function will be called after successful login (both direct and session)
+  const onLoginSuccess = function(user) {
+    // Store user data
+    window.currentUser = user;
+    console.log("User authenticated:", user);
+    
+    // Hide login form
+    hide();
+    
+    // Show logout button
+    $("#logout-button").show();
+    
+    // Connect to socket and load game
+    Socket.connect("http://localhost:3000", () => {
+      import("./main.js").then(() => {
+        console.log("Game module loaded");
+      });
+    });
+  };
+
   // This function initializes the UI
   const initialize = function () {
-    // Hide it
+    // Hide signin overlay initially
     $("#signin-overlay").hide();
+    
+    // Hide logout button initially
+    $("#logout-button").hide();
 
     // Submit event for the signin form
     $("#signin-form").on("submit", (e) => {
@@ -21,16 +44,7 @@ const SignInForm = (function () {
       Authentication.signin(
         username,
         password,
-        (user) => {
-          window.currentUser = user;
-          hide();
-
-          Socket.connect("http://localhost:3000/", () => {
-            import("./main.js").then(() => {
-              console.log("Game module loaded");
-            });
-          });
-        },
+        onLoginSuccess,
         (error) => {
           $("#signin-message").text(error);
         }
@@ -65,6 +79,53 @@ const SignInForm = (function () {
         }
       );
     });
+    
+    // Setup logout button functionality
+    $("#logout-button").on("click", handleLogout);
+    
+    // Check for existing session on page load
+    Authentication.validate(
+      onLoginSuccess,
+      () => {
+        // Show login form if no valid session
+        show();
+      }
+    );
+  };
+
+  // Function to handle logout
+  const handleLogout = function() {
+    // Store username before logout for cleanup
+    const username = window.currentUser?.username;
+    
+    Authentication.signout(
+      () => {
+        // Hide logout button
+        $("#logout-button").hide();
+        
+        // Disconnect socket (will trigger userLogout event)
+        Socket.disconnect();
+        
+        // Manually clean up the current player if needed
+        if (username && window.cleanupPlayer) {
+          window.cleanupPlayer(username);
+        }
+        
+        // Reset current user
+        window.currentUser = null;
+        
+        // Show login form
+        show();
+        
+        // Reload the page to reset game state
+        setTimeout(() => {
+          location.reload();
+        }, 300);
+      },
+      (error) => {
+        console.error("Logout failed:", error);
+      }
+    );
   };
 
   // This function shows the form
@@ -80,7 +141,7 @@ const SignInForm = (function () {
     $("#signin-overlay").fadeOut(500);
   };
 
-  return { initialize, show, hide };
+  return { initialize, show, hide, handleLogout, onLoginSuccess };
 })();
 
 const UI = (function () {

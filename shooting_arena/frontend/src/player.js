@@ -55,46 +55,56 @@ const PlayerSprite = function (username) {
    * PLAYER INITIALIZATION
    */
   /**
-   * Creates a player sprite with animations
-   * @param {string} spriteTexture - Path to sprite sheet
-   * @param {THREE.Scene} scene - Scene to add player to
-   * @param {THREE.Camera} camera - Camera that follows the player
-   */
-  const createPlayer = function (spriteTexture, scene, camera) {
-    // Load and configure texture
-    player.map = new THREE.TextureLoader().load(spriteTexture);
-    player.map.magFilter = THREE.NearestFilter;
-    player.map.repeat.set(1 / horizontalTile, 1 / verticalTile);
+ * Creates a player sprite with animations
+ * @param {string} spriteTexture - Path to sprite sheet
+ * @param {THREE.Scene} scene - Scene to add player to
+ * @param {THREE.Camera} camera - Camera that follows the player
+ */
+const createPlayer = function (spriteTexture, scene, camera) {
+  // Load and configure texture
+  player.map = new THREE.TextureLoader().load(spriteTexture);
+  player.map.magFilter = THREE.NearestFilter;
+  player.map.repeat.set(1 / horizontalTile, 1 / verticalTile);
 
-    // Set initial animation frame
-    player.map.offset.x = player.sequence.uv.u;
-    player.map.offset.y = player.sequence.uv.v;
+  // Set initial animation frame
+  player.map.offset.x = player.sequence.uv.u;
+  player.map.offset.y = player.sequence.uv.v;
 
-    // Create sprite material and mesh
-    const spriteMaterial = new THREE.SpriteMaterial({
-      map: player.map,
-      transparent: true,
-    });
+  // Create sprite material and mesh
+  const spriteMaterial = new THREE.SpriteMaterial({
+    map: player.map,
+    transparent: true,
+  });
 
-    player.sprite = new THREE.Sprite(spriteMaterial);
-    player.sprite.scale.set(2, 2, 1);
-    player.sprite.position.set(player.position.x, 1.5, player.position.z);
+  player.sprite = new THREE.Sprite(spriteMaterial);
+  player.sprite.scale.set(2, 2, 1);
+  player.sprite.position.set(player.position.x, 1.5, player.position.z);
 
-    scene.add(player.sprite);
+  scene.add(player.sprite);
 
-    // Configure camera
-    player.camera = camera;
-    player.camera.position.set(0, 10, 10);
-    player.camera.lookAt(player.position);
+  // Configure camera with proper initial position
+  player.camera = camera;
+  
+  // Set camera position to be behind and above the player
+  player.camera.position.set(
+    player.position.x,      // Same X as player
+    10,                     // Height above the scene
+    player.position.z + 15  // Behind the player
+  );
+  
+  // Make the camera look at the player's position
+  player.camera.lookAt(
+    new THREE.Vector3(player.position.x, 0, player.position.z)
+  );
 
-    // Setup collision detection
-    boundingBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
-    boundingBox.setFromObject(player.sprite);
+  // Setup collision detection
+  boundingBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+  boundingBox.setFromObject(player.sprite);
 
-    // Temporary increase BB size for easy shooting TO DO: REMOVE OR ADJUST
-    boundingBox.min.z -= 1;
-    boundingBox.max.z += 1;
-  };
+  // Temporary increase BB size for easy shooting TO DO: REMOVE OR ADJUST
+  boundingBox.min.z -= 1;
+  boundingBox.max.z += 1;
+};
 
   /**
    * ANIMATION MANAGEMENT
