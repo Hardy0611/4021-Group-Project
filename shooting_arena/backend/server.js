@@ -7,6 +7,7 @@ import fs from "fs";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
+import Environment from "./environment.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const usersFile = path.join(__dirname, "data/users.json");
 
@@ -21,6 +22,10 @@ const io = new Server(httpServer, {
 });
 
 const onlineUsers = {};
+
+// Initialize instances
+const environmentInstance = Environment();
+var bulletIDCounter = 0;
 
 // Middleware for parsing JSON
 app.use(express.json());
@@ -162,6 +167,33 @@ io.on("connection", (socket) => {
     const userState = JSON.parse(data);
     onlineUsers[userState.username] = userState;
     io.emit("updateUser", JSON.stringify(onlineUsers));
+  });
+
+  // Handle guns
+  socket.on("getGun", () => {
+    let gunsArray = environmentInstance.getGunPosition();
+    gunsArray = gunsArray.length
+      ? gunsArray
+      : environmentInstance.initializeGunPosition();
+    io.emit("updateGun", JSON.stringify(gunsArray));
+  });
+
+  socket.on("playerCollectGun", (data) => {
+    const info = JSON.parse(data);
+    const gun = environmentInstance.getGunByID(info.id);
+    const gunsArray = environmentInstance.removeGun(info.id);
+    io.emit("updateGun", JSON.stringify(gunsArray));
+    io.emit(
+      "updatePlayerGun",
+      JSON.stringify({ gun, username: info.username })
+    );
+  });
+
+  socket.on("addBullet", (data) => {
+    const bulletInfo = JSON.parse(data);
+    bulletInfo["id"] = bulletIDCounter;
+    bulletIDCounter += 1;
+    io.emit("addBullet", JSON.stringify(bulletInfo));
   });
 });
 

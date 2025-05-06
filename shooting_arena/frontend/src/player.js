@@ -1,11 +1,12 @@
 import * as THREE from "three";
+import { GunSprite } from "./gun";
 
 /**
  * Player sprite factory function
  * Creates and manages a player character with sprite animations
  * @returns {Object} - Player sprite controller object
  */
-const PlayerSprite = function () {
+const PlayerSprite = function (username) {
   /**
    * ANIMATION DEFINITIONS
    */
@@ -46,6 +47,7 @@ const PlayerSprite = function () {
     direction: "idle", // 'up', 'down', 'left', 'right', 'idle
     facing: "down",
     hasGun: false,
+    gun: null,
   };
 
   /**
@@ -87,6 +89,10 @@ const PlayerSprite = function () {
     // Setup collision detection
     boundingBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
     boundingBox.setFromObject(player.sprite);
+
+    // Temporary increase BB size for easy shooting TO DO: REMOVE OR ADJUST
+    boundingBox.min.z -= 1;
+    boundingBox.max.z += 1;
   };
 
   /**
@@ -265,8 +271,18 @@ const PlayerSprite = function () {
    * GETTERS AND SETTERS
    */
 
-  const updateGunStatus = function () {
+  const updateGunStatus = function (gunForPlayer) {
     player.hasGun = true;
+    player.gun = gunForPlayer;
+  };
+
+  const updateGunPosition = function () {
+    if (player.hasGun) {
+      player.gun.updateGunPosition();
+    } else if (player.gun) {
+      player.gun.removeGun();
+      player.gun = null;
+    }
   };
 
   const getPlayerSprite = function () {
@@ -293,12 +309,42 @@ const PlayerSprite = function () {
     return player.hasGun;
   };
 
+  const getGun = function () {
+    return player.gun;
+  };
+
   const getPlayerFacingDirection = function () {
     return player.facing;
   };
 
   const getPlayerHealth = function () {
     return player.health;
+  };
+
+  const getUsername = function () {
+    return username;
+  };
+
+  // Handle player's gun
+  const createGun = function (scene, gunInfo) {
+    player.gun = GunSprite();
+    player.gun.createGun(
+      scene,
+      player.position.x,
+      player.position.z,
+      gunInfo.offsetX,
+      gunInfo.offsetY
+    );
+    player.gun.attachGunToPlayer(player.sprite);
+    player.hasGun = true;
+  };
+
+  const dropGun = function () {
+    if (player.hasGun) {
+      player.hasGun = false;
+      player.gun.removeGun();
+      player.gun = null;
+    }
   };
 
   /**
@@ -365,15 +411,20 @@ const PlayerSprite = function () {
     updatePlayerPosition,
     updatePlayerAnimation,
     updateGunStatus,
+    updateGunPosition,
     getPlayerSprite,
     getPlayerPosition,
     getBoundBox,
     getPlayerDirection,
     getPlayerHealth,
     getHasGun,
+    getUsername,
+    getGun,
     getPlayerSequence,
     getPlayerFacingDirection,
     setAll,
+    createGun,
+    dropGun,
   };
 };
 

@@ -31,6 +31,7 @@ const Socket = (function () {
       });
     }
   };
+
   return { connect, disconnect, getSocket, onUpdateUsers };
 })();
 

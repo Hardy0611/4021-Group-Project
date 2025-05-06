@@ -2,7 +2,7 @@ import * as THREE from "three";
 import PlayerSprite from "./player.js";
 import Map from "./map.js";
 import Socket from "./socket.js";
-import GunSprite from "./gun.js";
+import { GunSpriteArray } from "./gun.js";
 import BulletSprite from "./bullet.js";
 
 /**
@@ -23,7 +23,7 @@ renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
 
 // Create player character
-const playerSprite = PlayerSprite();
+const playerSprite = PlayerSprite(window.currentUser?.username);
 playerSprite.createPlayer("asset/player1_sprite.png", scene, camera);
 
 // Create game map
@@ -35,6 +35,10 @@ const socket = Socket.getSocket();
 
 // Store other players' sprites
 const otherPlayers = {};
+
+// Initialize Gun for players
+const unarmGunArray = GunSpriteArray(scene);
+socket.emit("getGun");
 
 /**
  * PLAYER STATE MANAGEMENT
@@ -55,15 +59,25 @@ function getPlayerState() {
     health: playerSprite.getPlayerHealth(),
   };
 }
-const gunSprite = GunSprite();
-gunSprite.createGun("asset/gun.png", scene, 10, 40);
 
 // Handle bullet: create, animate, destroy
 var bulletSpriteArray = [];
 function updateBulletAnimation() {
+  const otherPlayerBB = [];
+  for (let username in otherPlayers) {
+    otherPlayerBB.push({ username, BB: otherPlayers[username].getBoundBox() });
+  }
+
   if (bulletSpriteArray.length == 0) return;
   if (!bulletSpriteArray[0].isDestroy()) {
-    bulletSpriteArray[0].moveBullet();
+    const hitPlayerStatus = bulletSpriteArray[0].moveBullet(
+      playerSprite.getBoundBox(),
+      otherPlayerBB
+    );
+
+    console.log(hitPlayerStatus);
+
+    // update the hitPlayer
   }
   bulletSpriteArray.shift();
 }
@@ -85,16 +99,18 @@ window.addEventListener("keydown", (e) => {
     var direction = playerSprite.getPlayerFacingDirection();
     var position = playerSprite.getPlayerPosition();
     if (playerSprite.getHasGun()) {
-      const bulletSprite = BulletSprite();
-      bulletSprite.createBullet(
-        scene,
-        position.x,
-        position.z,
-        direction,
-        map.getBoundBoxArray()
+      socket.emit(
+        "addBullet",
+        JSON.stringify({
+          direction,
+          initialX: position.x,
+          initialZ: position.z,
+        })
       );
-      bulletSpriteArray.push(bulletSprite);
     }
+  } else if (e.key === "d") {
+    // Drop the gun
+    playerSprite.dropGun();
   }
 });
 
@@ -123,7 +139,7 @@ Socket.onUpdateUsers((users) => {
 
     // Handle new player joining
     if (!otherPlayers[username]) {
-      const sprite = PlayerSprite();
+      const sprite = PlayerSprite(username);
       sprite.createPlayer("asset/player1_sprite.png", scene, camera);
       otherPlayers[username] = sprite;
       console.log("New player joined:", username);
@@ -141,6 +157,20 @@ Socket.onUpdateUsers((users) => {
       console.log("Player left:", username);
     }
   });
+});
+
+socket.on("addBullet", (data) => {
+  const bulletInfo = JSON.parse(data);
+  const bulletSprite = BulletSprite();
+  bulletSprite.createBullet(
+    bulletInfo.id,
+    scene,
+    bulletInfo.initialX,
+    bulletInfo.initialZ,
+    bulletInfo.direction,
+    map.getBoundBoxArray()
+  );
+  bulletSpriteArray.push(bulletSprite);
 });
 
 /**
@@ -227,31 +257,49 @@ function animate(now, collideObjects) {
   playerSprite.updatePlayerAnimation(now);
   Object.values(otherPlayers).forEach((sprite) => {
     sprite.updatePlayerAnimation(now);
+    sprite.updateGunPosition();
   });
   updateBulletAnimation();
 
   // Update physics and state
   playerSprite.updatePlayerPosition(collideObjects);
   updatePositionDisplay();
-  gunSprite.updateGunPosition();
+  if (playerSprite.getHasGun()) {
+    playerSprite.updateGunPosition();
+  }
 
   // Render the scene
   renderer.render(scene, camera);
 }
+
 function collectGuns() {
   if (playerSprite.getHasGun()) return;
   var playerBB = playerSprite.getBoundBox();
-  var gunBB = gunSprite.getBoundBox();
-  if (!playerBB || !gunBB) {
-    return false;
+  var gunBBArray = unarmGunArray.getBoundBoxArray();
+  if (!playerBB || gunBBArray.length == 0) {
+    return;
   }
-  if (playerBB.intersectsBox(gunBB)) {
-    playerSprite.updateGunStatus();
-    gunSprite.attachGunToPlayer(playerSprite.getPlayerSprite());
-    return true;
+
+  for (let i = 0; i < gunBBArray.length; i++) {
+    if (playerBB.intersectsBox(gunBBArray[i].BB)) {
+      const gunForPlayer = unarmGunArray.playerCollectGun(
+        gunBBArray[i].id,
+        playerSprite.getPlayerSprite(),
+        playerSprite.getUsername()
+      );
+      playerSprite.updateGunStatus(gunForPlayer);
+      return;
+    }
   }
-  return false;
 }
+
+socket.on("updatePlayerGun", (data) => {
+  const playerInfo = JSON.parse(data);
+  if (window.currentUser?.username == playerInfo.username) return;
+  if (!otherPlayers[playerInfo.username]) return;
+  // Create a gun for the other user
+  otherPlayers[playerInfo.username].createGun(scene, playerInfo.gun);
+});
 
 renderer.setAnimationLoop((now) => {
   var collideObjects = checkObjectCollision();
