@@ -53,27 +53,12 @@
   <script type="module" src="src/ui.js"></script>
   <script type="module" src="src/socket.js"></script>
   <script type="module">
-    import UI from './src/ui.js';
-    import { SignInForm } from './src/ui.js';
-    import Authentication from './src/authentication.js';
-    import Socket from './src/socket.js';
-    $(function() {
-      //Init the UI
-      UI.initialize();
-      // Validate the signin
-      Authentication.validate(
-          (user) => {
-              window.currentUser = user;
-              console.log("User authenticated: ", user);
-              SignInForm.hide();
-              Socket.connect("http://localhost:3000");
-              import("./src/main.js").then(() => {
-                console.log("Game module loaded");
-              });
-          },
-          () => { SignInForm.show(); }
-      );
-    });
+      import UI from './src/ui.js';
+      
+      $(function() {
+        // Initialize the UI
+        UI.initialize();
+      });
     </script>
   </body>
 </html>

@@ -84,6 +84,14 @@ const PlayerSprite = function (username) {
 
     // Configure camera
     player.camera = camera;
+
+    // Set camera position to be behind and above the player
+    player.camera.position.set(
+      player.position.x, // Same X as player
+      10, // Height above the scene
+      player.position.z + 15 // Behind the player
+    );
+
     player.camera.position.set(0, 10, 10);
     player.camera.lookAt(player.position);
 
