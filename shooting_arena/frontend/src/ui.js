@@ -75,13 +75,21 @@ const SignInForm = (function () {
 
   // Function to handle logout
   const handleLogout = function() {
+    // Store username before logout for cleanup
+    const username = window.currentUser?.username;
+    
     Authentication.signout(
       () => {
         // Hide logout button
         $("#logout-button").hide();
         
-        // Disconnect socket
+        // Disconnect socket (will trigger userLogout event)
         Socket.disconnect();
+        
+        // Manually clean up the current player if needed
+        if (username && window.cleanupPlayer) {
+          window.cleanupPlayer(username);
+        }
         
         // Reset current user
         window.currentUser = null;

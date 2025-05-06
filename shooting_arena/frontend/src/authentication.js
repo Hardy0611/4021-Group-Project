@@ -67,6 +67,10 @@ const Authentication = (function () {
           user = null;
           if (onSuccess) onSuccess();
         }
+      })
+      .catch(error => {
+        console.error("Logout error:", error);
+        if (onError) onError("Network error during logout");
       });
   };
 
