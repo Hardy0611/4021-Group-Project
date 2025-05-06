@@ -69,12 +69,20 @@ body {
   color: var(--warning-color);
 }
 /* Signin overlay */
+#form-wrap {
+  width: 800;
+  display: flex; /* flex */
+  background-color: #fbeec4; /* bg-yellow-100 */
+  border-width: 10px; /* border-10 */
+  border-color: #ca8a04; /* border-yellow-500 */
+  padding: 1rem; /* p-4 */
+  border-style: double; /* border-double */
+}
+
 #signin-form {
-  width: 270px;
   align-self: stretch;
 }
 #register-form {
-  width: 380px;
   background: var(--register-form-background);
   padding: 20px;
 }
@@ -88,8 +96,6 @@ input,
 select {
   font-size: 1rem;
   background: var(--input-background);
-  border: none;
-  border-radius: 20px;
   padding: 10px 15px;
 }
 input::placeholder,
@@ -106,6 +112,39 @@ button {
   padding: 0 20px;
   transition: 1s background;
   cursor: pointer;
+}
+
+.form-placeholder {
+  border-width: 1px; /* border-10 */
+  border-color: #ca8a04; /* border-yellow-500 */
+  border-radius: 2px;
+  padding: 0.5rem; /* p-4 */
+  padding-left: 1rem;
+}
+
+.form-placeholder::placeholder {
+  color: #997c3d; /* text-yellow-700 */
+  font-family: "Pixelify Sans", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 100;
+  font-style: normal;
+}
+
+.submit-button {
+  font-size: 1.125rem; /* text-lg */
+  display: flex; /* flex */
+  justify-content: center; /* justify-center */
+  align-items: center; /* items-center */
+  width: 100%; /* w-full */
+  border-width: 5px; /* border-10 */
+  border-color: #ca8a04; /* border-yellow-500 */
+  border-style: double; /* border-double */
+  background-color: #ffc862;
+  color: #684701; /* text-yellow-700 */
+}
+
+.submit-button:hover {
+  background-color: #ffb224; /* hover:bg-yellow-300 */
 }
 button:hover {
   background: var(--button-background-hover);
@@ -178,4 +217,12 @@ button.icon:active {
 }
 #signin-user {
   cursor: pointer;
+}
+
+
+.pixelify-sans-font {
+  font-family: "Pixelify Sans", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 600;
+  font-style: normal;
 }
