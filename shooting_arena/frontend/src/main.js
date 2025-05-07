@@ -101,8 +101,9 @@ function updateBulletAnimation() {
 
     // Handle player hits
     if (hitPlayerStatus.currentUser) {
-      // Current player was hit - Note: The health decrease is now handled by the server
-      // via the gotHit event to ensure consistency
+
+      // Show visual effects for being hit
+      playerSprite.decreaseHealth();
 
       // Camera shake effect
       shakeCamera();
@@ -111,9 +112,6 @@ function updateBulletAnimation() {
       flashScreen();
 
       // Remove the bullet
-      bulletSpriteArray.splice(i, 1);
-    } else if (hitPlayerStatus.hitOtherPlayer) {
-      // Another player was hit - bullet is already removed in moveBullet
       bulletSpriteArray.splice(i, 1);
     }
   }
@@ -272,19 +270,6 @@ socket.on("addBullet", (data) => {
     isLocalBullet // Pass the flag to identify local bullets
   );
   bulletSpriteArray.push(bulletSprite);
-});
-
-socket.on("gotHit", (data) => {
-  const hitInfo = JSON.parse(data);
-
-  // Show visual effects for being hit
-  playerSprite.decreaseHealth();
-
-  // Camera shake effect
-  shakeCamera();
-
-  // Screen flash effect
-  flashScreen();
 });
 
 /**
