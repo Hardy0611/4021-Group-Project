@@ -44,12 +44,13 @@ const PlayerSprite = function (username) {
     sprite: null,
     sequence: sequences.idleDown,
     animationSpeed: 0.1,
-    health: 100,
-    direction: "idle",
+    health: 3,
+    direction: "idle", // 'up', 'down', 'left', 'right', 'idle
     facing: "down",
     hasGun: false,
     gun: null,
-    isHit: false, // Add this flag
+    ammo: 0,
+    isHit: false,
   };
 
   /**
@@ -295,6 +296,7 @@ const PlayerSprite = function (username) {
   const updateGunStatus = function (gunForPlayer) {
     player.hasGun = true;
     player.gun = gunForPlayer;
+    player.ammo = 16;
   };
 
   const updateGunPosition = function () {
@@ -350,6 +352,14 @@ const PlayerSprite = function (username) {
     return player.facing;
   };
 
+  const getAmmo = function () {
+    if (player.hasGun) {
+      return player.ammo;
+    } else {
+      return 0;
+    }
+  };
+
   // Handle player's gun
   const createGun = function (scene, gunInfo) {
     player.gun = GunSprite();
@@ -372,6 +382,7 @@ const PlayerSprite = function (username) {
       player.hasGun = false;
       player.gun.removeGun();
       player.gun = null;
+      player.ammo = 0;
     }
   };
 
@@ -432,21 +443,19 @@ const PlayerSprite = function (username) {
 
   const decreaseHealth = function () {
     player.health -= 1;
-
   };
 
   const increaseHealth = function () {
     player.health += 1;
   };
 
-  // Add this method to your PlayerSprite object return statement
-  const playHitAnimation = function() {
+  const playHitAnimation = function () {
     // Only apply if we have a valid sprite with material
     if (player.sprite && player.sprite.material) {
       // Set the sprite to red
       player.sprite.material.color.set(0xff0000); // Bright red
       player.isHit = true;
-      
+
       // Reset back to normal after animation duration
       setTimeout(() => {
         if (player.sprite && player.sprite.material) {
@@ -454,6 +463,16 @@ const PlayerSprite = function (username) {
           player.isHit = false;
         }
       }, 400); // Match this with the server-side timeout (400ms)
+    }
+  };
+  const decreaseAmmo = function () {
+    if (player.ammo <= 0) {
+      player.hasGun = false;
+      player.gun.removeGun();
+      player.gun = null;
+      player.ammo = 0;
+    } else if (player.hasGun) {
+      player.ammo -= 1;
     }
   };
 
@@ -485,6 +504,8 @@ const PlayerSprite = function (username) {
     decreaseHealth,
     increaseHealth,
     playHitAnimation,
+    getAmmo,
+    decreaseAmmo,
   };
 };
 
