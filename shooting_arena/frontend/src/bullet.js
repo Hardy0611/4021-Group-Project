@@ -256,36 +256,6 @@ const BulletSprite = function () {
       };
     }
 
-    // Check if bullet hit any other players
-    if (otherPlayerBB && otherPlayerBB.length > 0) {
-      for (let i = 0; i < otherPlayerBB.length; i++) {
-        if (
-          boundingBox &&
-          otherPlayerBB[i].BB &&
-          boundingBox.intersectsBox(otherPlayerBB[i].BB)
-        ) {
-          // Only emit playerHit if this is a bullet from the current player
-          // This prevents multiple players from emitting hit events for the same collision
-          if (socket && bullet.isCurrentPlayerBullet) {
-            socket.emit(
-              "playerHit",
-              JSON.stringify({
-                hitPlayer: otherPlayerBB[i].username,
-              })
-            );
-            console.log("Hit player:", otherPlayerBB[i].username);
-          }
-
-          removeBullet();
-          return {
-            currentUser: false,
-            hitOtherPlayer: true,
-            otherPlayerUsername: otherPlayerBB[i].username,
-          };
-        }
-      }
-    }
-
     // No hits
     return {
       currentUser: false,
