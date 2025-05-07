@@ -45,7 +45,16 @@ const Socket = (function () {
     }
   };
 
-  return { connect, disconnect, getSocket, onUpdateUsers };
+  const gotHit = (callback) => {
+    if(socket) {
+      socket.on("hitPlayer", (data) =>{
+        const user = JSON.parse(data);
+        callback(user);
+      } )
+    }
+  }
+
+  return { connect, disconnect, getSocket, onUpdateUsers, gotHit };
 })();
 
 export default Socket;

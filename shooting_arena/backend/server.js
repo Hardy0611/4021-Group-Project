@@ -146,6 +146,7 @@ io.on("connection", (socket) => {
       facing: "down",
       hasGun: false,
       health: 100,
+      hitAnimation: false,
     };
     console.log(onlineUsers);
 
@@ -202,9 +203,46 @@ io.on("connection", (socket) => {
 
   socket.on("addBullet", (data) => {
     const bulletInfo = JSON.parse(data);
-    bulletInfo["id"] = bulletIDCounter;
-    bulletIDCounter += 1;
-    io.emit("addBullet", JSON.stringify(bulletInfo));
+    const bulletID = bulletIDCounter++;
+
+    // Add shooter's ID to the bullet info
+    const bulletData = {
+      id: bulletID,
+      shooterID: socket.id, // Add this line
+      direction: bulletInfo.direction,
+      initialX: bulletInfo.initialX,
+      initialZ: bulletInfo.initialZ,
+    };
+
+    // Broadcast bullet to all clients
+    io.emit("addBullet", JSON.stringify(bulletData));
+  });
+
+  socket.on("playerHit", (data) => {
+    const hitInfo = JSON.parse(data);
+    const hitUsername = hitInfo.hitPlayer;
+
+    console.log(`${hitUsername} got hit`);
+
+    // Update user state to indicate hit animation should play
+    if (onlineUsers[hitUsername]) {
+      // Add a hit animation flag to the player state
+      onlineUsers[hitUsername].hitAnimation = true;
+
+      // Decrease player health
+      onlineUsers[hitUsername].health -= 1;
+
+      // Broadcast the updated player state to all clients
+      io.emit("updateUser", JSON.stringify(onlineUsers));
+
+      // Remove the hit animation flag after 1 second
+      setTimeout(() => {
+        if (onlineUsers[hitUsername]) {
+          onlineUsers[hitUsername].hitAnimation = false;
+          io.emit("updateUser", JSON.stringify(onlineUsers));
+        }
+      }, 400);
+    }
   });
 });
 

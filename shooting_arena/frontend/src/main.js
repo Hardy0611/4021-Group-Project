@@ -63,36 +63,99 @@ function getPlayerState() {
 
 // Handle bullet: create, animate, destroy
 var bulletSpriteArray = [];
+// Handle bullet: create, animate, destroy
 function updateBulletAnimation() {
+  // Create array of other player bounding boxes for collision detection
   const otherPlayerBB = [];
   for (let username in otherPlayers) {
-    if (username == window.session?.username) {
-      continue;
+    if (username !== window.currentUser?.username) {
+      const bb = otherPlayers[username].getBoundBox();
+      if (bb) {
+        otherPlayerBB.push({
+          username,
+          BB: bb,
+        });
+      }
     }
-    otherPlayerBB.push({
-      username,
-      BB: otherPlayers[username].getBoundBox(),
-    });
   }
 
-  if (bulletSpriteArray.length == 0) return;
-  if (!bulletSpriteArray[0].isDestroy()) {
-    const hitPlayerStatus = bulletSpriteArray[0].moveBullet(
+  // Process all bullets in the array
+  for (let i = bulletSpriteArray.length - 1; i >= 0; i--) {
+    // Skip invalid bullets
+    if (!bulletSpriteArray[i]) {
+      bulletSpriteArray.splice(i, 1);
+      continue;
+    }
+
+    // Process destroyed bullets
+    if (bulletSpriteArray[i].isDestroy()) {
+      bulletSpriteArray.splice(i, 1);
+      continue;
+    }
+
+    // Move the bullet and get hit status
+    const hitPlayerStatus = bulletSpriteArray[i].moveBullet(
       playerSprite.getBoundBox(),
       otherPlayerBB
     );
 
-    console.log(hitPlayerStatus);
-
-    // update the hitPlayer
+    // Handle player hits
     if (hitPlayerStatus.currentUser) {
+
+      // Show visual effects for being hit
       playerSprite.decreaseHealth();
-      // TO DO: animation if the current player get hit (camera shake, screen become red)
-    } else if (hitPlayerStatus.hitOtherPlayer) {
-      // TO DO: animation when other player got hit (player jumps up y axis turns red for a few second)
+
+      // Camera shake effect
+      shakeCamera();
+
+      // Screen flash effect
+      flashScreen();
+
+      // Remove the bullet
+      bulletSpriteArray.splice(i, 1);
+
+      socket.emit("playerHit", JSON.stringify({hitPlayer: window.currentUser?.username}))
     }
   }
-  bulletSpriteArray.shift();
+}
+
+// Add these helper functions to keep the code cleaner
+function shakeCamera() {
+  const originalPosition = camera.position.clone();
+  let shakeIntensity = 0.2;
+  let shakeCount = 0;
+
+  const shakeInterval = setInterval(() => {
+    if (shakeCount > 5) {
+      clearInterval(shakeInterval);
+      camera.position.copy(originalPosition);
+      return;
+    }
+
+    camera.position.x += Math.random() * shakeIntensity - shakeIntensity / 2;
+    camera.position.y += Math.random() * shakeIntensity - shakeIntensity / 2;
+
+    shakeCount++;
+    shakeIntensity *= 0.9;
+  }, 50);
+}
+
+function flashScreen() {
+  const overlay = document.createElement("div");
+  overlay.style.position = "fixed";
+  overlay.style.top = "0";
+  overlay.style.left = "0";
+  overlay.style.width = "100%";
+  overlay.style.height = "100%";
+  overlay.style.backgroundColor = "rgba(255, 0, 0, 0.3)";
+  overlay.style.zIndex = "1000";
+  overlay.style.pointerEvents = "none";
+
+  document.body.appendChild(overlay);
+
+  setTimeout(() => {
+    document.body.removeChild(overlay);
+  }, 200);
 }
 
 // Cleanup function to remove player from scene
@@ -173,6 +236,13 @@ Socket.onUpdateUsers((users) => {
       console.log("New player joined:", username);
     }
 
+    // Check if this player has the hit animation flag
+    if (userState.hitAnimation && otherPlayers[username] && 
+        otherPlayers[username].playHitAnimation) {
+      console.log("Playing hit animation for:", username);
+      otherPlayers[username].playHitAnimation();
+    }
+
     // Update existing player state
     otherPlayers[username].setAll(userState);
   });
@@ -185,16 +255,22 @@ Socket.onUpdateUsers((users) => {
   });
 });
 
+// And when receiving bullet creation events (in your socket.on handler):
 socket.on("addBullet", (data) => {
   const bulletInfo = JSON.parse(data);
   const bulletSprite = BulletSprite();
+
+  // Check if this is the current player's bullet
+  const isLocalBullet = bulletInfo.shooterID === socket.id;
+
   bulletSprite.createBullet(
     bulletInfo.id,
     scene,
     bulletInfo.initialX,
     bulletInfo.initialZ,
     bulletInfo.direction,
-    map.getBoundBoxArray()
+    map.getBoundBoxArray(),
+    isLocalBullet // Pass the flag to identify local bullets
   );
   bulletSpriteArray.push(bulletSprite);
 });

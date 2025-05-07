@@ -50,6 +50,7 @@ const PlayerSprite = function (username) {
     hasGun: false,
     gun: null,
     ammo: 0,
+    isHit: false,
   };
 
   /**
@@ -99,10 +100,10 @@ const PlayerSprite = function (username) {
     boundingBox.setFromObject(player.sprite);
 
     // Temporary increase BB size for easy shooting TO DO: REMOVE OR ADJUST
-    boundingBox.min.z -= 7;
-    boundingBox.max.z += 7;
-    boundingBox.min.x -= 2;
-    boundingBox.max.x += 2;
+    boundingBox.min.z -= 1;
+    boundingBox.max.z += 1;
+    boundingBox.min.x -= 0;
+    boundingBox.max.x += 0;
   };
 
   /**
@@ -129,6 +130,17 @@ const PlayerSprite = function (username) {
       player.map.offset.x = index / horizontalTile;
       player.map.offset.y = player.sequence.uv.v;
       lastUpdate = time;
+    }
+    // Always ensure the player returns to normal color after hit animation
+    if (
+      !player.isHit &&
+      player.sprite &&
+      player.sprite.material &&
+      player.sprite.material.color.r > 0.8 &&
+      player.sprite.material.color.g < 0.5
+    ) {
+      // Reset to white if we detect it's still red
+      player.sprite.material.color.set(0xffffff);
     }
   };
 
@@ -437,6 +449,22 @@ const PlayerSprite = function (username) {
     player.health += 1;
   };
 
+  const playHitAnimation = function () {
+    // Only apply if we have a valid sprite with material
+    if (player.sprite && player.sprite.material) {
+      // Set the sprite to red
+      player.sprite.material.color.set(0xff0000); // Bright red
+      player.isHit = true;
+
+      // Reset back to normal after animation duration
+      setTimeout(() => {
+        if (player.sprite && player.sprite.material) {
+          player.sprite.material.color.set(0xffffff); // Back to white
+          player.isHit = false;
+        }
+      }, 400); // Match this with the server-side timeout (400ms)
+    }
+  };
   const decreaseAmmo = function () {
     if (player.ammo <= 0) {
       player.hasGun = false;
@@ -475,6 +503,7 @@ const PlayerSprite = function (username) {
     getFacing,
     decreaseHealth,
     increaseHealth,
+    playHitAnimation,
     getAmmo,
     decreaseAmmo,
   };
