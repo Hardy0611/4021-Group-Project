@@ -113,6 +113,8 @@ function updateBulletAnimation() {
 
       // Remove the bullet
       bulletSpriteArray.splice(i, 1);
+
+      socket.emit("playerHit", JSON.stringify({hitPlayer: window.currentUser?.username}))
     }
   }
 }

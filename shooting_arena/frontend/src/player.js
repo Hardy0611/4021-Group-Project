@@ -439,7 +439,23 @@ const PlayerSprite = function (username) {
     player.health += 1;
   };
 
-  
+  // Add this method to your PlayerSprite object return statement
+  const playHitAnimation = function() {
+    // Only apply if we have a valid sprite with material
+    if (player.sprite && player.sprite.material) {
+      // Set the sprite to red
+      player.sprite.material.color.set(0xff0000); // Bright red
+      player.isHit = true;
+      
+      // Reset back to normal after animation duration
+      setTimeout(() => {
+        if (player.sprite && player.sprite.material) {
+          player.sprite.material.color.set(0xffffff); // Back to white
+          player.isHit = false;
+        }
+      }, 400); // Match this with the server-side timeout (400ms)
+    }
+  };
 
   /**
    * PUBLIC API
@@ -468,6 +484,7 @@ const PlayerSprite = function (username) {
     getFacing,
     decreaseHealth,
     increaseHealth,
+    playHitAnimation,
   };
 };
 
