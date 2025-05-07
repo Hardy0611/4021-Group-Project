@@ -68,6 +68,19 @@ body {
   font-weight: bold;
   color: var(--warning-color);
 }
+
+/* Waiting Room */
+#instruction {
+  width: 800;
+  display: flex; /* flex */
+  background-color: #fbeec4; /* bg-yellow-100 */
+  border-width: 10px; /* border-10 */
+  border-color: #ca8a04; /* border-yellow-500 */
+  padding: 1rem; /* p-4 */
+  border-style: double; /* border-double */
+  color: #684701;
+}
+
 /* Signin overlay */
 #form-wrap {
   width: 800;
