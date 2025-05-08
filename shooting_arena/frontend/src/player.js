@@ -53,6 +53,9 @@ const PlayerSprite = function (username) {
     ammo: 0,
     isHit: false,
     freeze: false,
+    ready: false,
+    inGame: false,
+    isdead: null,
   };
 
   /**
@@ -128,6 +131,9 @@ const PlayerSprite = function (username) {
   const updatePlayerAnimation = function (time) {
     if (lastUpdate === 0) lastUpdate = time;
     if (lastUpdate === time || time - lastUpdate >= player.sequence.timing) {
+      if (!player.sequence) {
+        player.sequence = sequences.idleDown;
+      }
       index = (index + 1) % player.sequence.count;
       player.map.offset.x = index / horizontalTile;
       player.map.offset.y = player.sequence.uv.v;
@@ -509,6 +515,14 @@ const PlayerSprite = function (username) {
       player.speed = originalspeed;
     }, 2000)
   }
+  const setReady = function (state) {
+    player.ready = state;
+    player.inGame = state;
+  };
+
+  const setDead = function (time) {
+    player.isdead = time;
+  };
 
   /**
    * PUBLIC API
@@ -544,6 +558,8 @@ const PlayerSprite = function (username) {
     playFreezeAnimation,
     getFreeze,
     setFreeze,
+    setReady,
+    setDead,
   };
 };
 

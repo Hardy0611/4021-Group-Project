@@ -26,6 +26,7 @@ const app = express();
 const httpServer = createServer(app);
 
 const onlineUsers = {};
+const usersInWaitingRoom = new Set(); // Track who's in waiting room
 
 // Initialize instances
 const environmentInstance = Environment();
@@ -154,6 +155,8 @@ io.on("connection", (socket) => {
       hitAnimation: false,
       ready: false,
       freeze: false,
+      inGame: false,
+      isdead: null,
     };
     console.log(onlineUsers);
   }
@@ -161,6 +164,7 @@ io.on("connection", (socket) => {
   // Handle explicit user logout
   socket.on("userLogout", (username) => {
     if (username && onlineUsers[username]) {
+      leaveWaitingRoom(username);
       delete onlineUsers[username];
       console.log(`User ${username} logged out`);
       // Broadcast user list update to all clients
@@ -172,18 +176,20 @@ io.on("connection", (socket) => {
 
   //Handle waiting room
   socket.on("playerReady", (username) => {
-    // change the user ready state in onlineUsers
-    onlineUsers[username].ready = true;
-    console.log(`Player ${username} is ready`);
+    if (usersInWaitingRoom.size === Object.keys(onlineUsers).length) {
+      onlineUsers[username].ready = true;
+      console.log(`Player ${username} is ready`);
 
-    // check if all users are ready
-    checkAllUsersReady();
+      // Check if all users are ready
+      checkAllUsersReady();
+    }
   });
 
   function checkAllUsersReady() {
     const allUsers = Object.values(onlineUsers);
     const readyCount = allUsers.filter((user) => user.ready).length;
     const totalCount = allUsers.length;
+    const inGame = allUsers.filter((user) => user.inGame).length;
 
     // Send waiting status to all clients
     io.emit(
@@ -191,11 +197,13 @@ io.on("connection", (socket) => {
       JSON.stringify({
         ready: readyCount,
         total: totalCount,
+        inGame: inGame,
       })
     );
 
-    if (totalCount > 0 && readyCount === totalCount) {
+    if (totalCount > 0 && readyCount === totalCount && inGame === 0) {
       console.log("All players are ready");
+      usersInWaitingRoom.clear();
       io.emit("allReady");
     }
   }
@@ -203,11 +211,12 @@ io.on("connection", (socket) => {
   // Handle user disconnection
   socket.on("disconnect", () => {
     if (user) {
+      // Remove from waiting room tracking
+      leaveWaitingRoom(user.username);
+
+      // Your existing disconnect code
       delete onlineUsers[user.username];
-      console.log(onlineUsers);
-      // Broadcast to all clients that a user has disconnected
       io.emit("updateUser", JSON.stringify(onlineUsers));
-      // let remain user load the game
       checkAllUsersReady();
     }
   });
@@ -304,6 +313,88 @@ io.on("connection", (socket) => {
       }
     }, 400);
   });
+  socket.on("playerDead", (data) => {
+    const user = JSON.parse(data);
+    const deadTime = user.deadtime;
+    console.log(`player ${user.username} is dead at ${deadTime}`);
+
+    // Update user state to mark as dead
+    if (onlineUsers[user.username]) {
+      onlineUsers[user.username].isdead = deadTime;
+    }
+
+    // Check if game is over (only one player left alive)
+    const aliveUsers = Object.values(onlineUsers).filter(
+      (user) => user.inGame === true && user.isdead === null
+    );
+
+    // Get all players who participated in the game
+    const gamePlayers = Object.values(onlineUsers).filter(
+      (player) => player.inGame === true
+    );
+
+    // Sort players by their death time (null = still alive, comes first)
+    const playerRank = gamePlayers.sort((a, b) => {
+      if (a.isdead === null) return -1; // Alive players first
+      if (b.isdead === null) return 1;
+      return b.isdead - a.isdead; // Later death time = higher rank
+    });
+
+    console.log(playerRank.length);
+    console.log("rankedPlayer:", playerRank);
+
+    console.log("aliveUsers No. :", aliveUsers.length);
+    if (aliveUsers.length <= 1) {
+      io.emit("gameOver", playerRank);
+    } else if (aliveUsers.length > 1) {
+      io.emit("someoneDead", { playerRank, currentUsername: user.username });
+    }
+  });
+
+  // Add this handler in your socket.on connection block
+  socket.on("enterWaitingRoom", (username) => {
+    // Mark this user as being in the waiting room
+    usersInWaitingRoom.add(username);
+
+    // Check if all online users are in waiting room
+    const allUsers = Object.keys(onlineUsers);
+    const allInWaitingRoom =
+      allUsers.length === usersInWaitingRoom.size &&
+      allUsers.every((user) => usersInWaitingRoom.has(user));
+
+    // Send status update to all clients
+    io.emit(
+      "waitingRoomStatus",
+      JSON.stringify({
+        inWaitingRoom: usersInWaitingRoom.size,
+        total: allUsers.length,
+        allInWaitingRoom: allInWaitingRoom,
+      })
+    );
+
+    // If all users are in waiting room, enable ready buttons
+    if (allInWaitingRoom) {
+      io.emit("enableReadyButtons");
+    }
+  });
+
+  // Handle player leaving waiting room (disconnect or move to game)
+  function leaveWaitingRoom(username) {
+    if (usersInWaitingRoom.has(username)) {
+      usersInWaitingRoom.delete(username);
+
+      // Update waiting room status
+      const allUsers = Object.keys(onlineUsers);
+      io.emit(
+        "waitingRoomStatus",
+        JSON.stringify({
+          inWaitingRoom: usersInWaitingRoom.size,
+          total: allUsers.length,
+          allInWaitingRoom: false,
+        })
+      );
+    }
+  }
 });
 
 // serving the backend server

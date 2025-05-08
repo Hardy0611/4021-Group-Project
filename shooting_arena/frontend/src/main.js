@@ -4,6 +4,7 @@ import Map from "./map.js";
 import Socket from "./socket.js";
 import { GunSpriteArray } from "./gun.js";
 import BulletSprite from "./bullet.js";
+import { now } from "three/examples/jsm/libs/tween.module.js";
 
 /**
  * GAME INITIALIZATION
@@ -25,6 +26,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 // Create player character
 const playerSprite = PlayerSprite(window.currentUser?.username);
 playerSprite.createPlayer("asset/player1_sprite.png", scene, camera);
+playerSprite.setReady(true);
 
 // Create game map
 const map = Map();
@@ -319,43 +321,35 @@ socket.on("addBullet", (data) => {
   bulletSpriteArray.push(bulletSprite);
 });
 
-/**
- * UI ELEMENTS
- */
-// Add coordinate display to screen
-// function addCoordinateIndicators() {
-//   const positionDisplay = document.createElement("div");
-//   positionDisplay.id = "position-display";
-//   positionDisplay.style.position = "absolute";
-//   positionDisplay.style.top = "10px";
-//   positionDisplay.style.left = "10px";
-//   positionDisplay.style.backgroundColor = "rgba(0, 0, 0, 0.7)";
-//   positionDisplay.style.color = "white";
-//   positionDisplay.style.padding = "10px";
-//   positionDisplay.style.fontFamily = "monospace";
-//   positionDisplay.style.fontSize = "16px";
-//   positionDisplay.style.borderRadius = "5px";
-//   document.body.appendChild(positionDisplay);
-// }
-// addCoordinateIndicators();
-
-// // Update the position display
-// function updatePositionDisplay() {
-//   const display = document.getElementById("position-display");
-//   const position = playerSprite.getPlayerPosition();
-//   if (display) {
-//     display.textContent = `Position:
-//     X: ${position.x.toFixed(2)}
-//     Y: ${position.y.toFixed(2)}
-//     Z: ${position.z.toFixed(2)}`;
-//   }
-// }
-
 function updatePlayerStatus() {
   const healthDisplay = document.getElementById("player-health");
   if (healthDisplay) {
     const playerHealth = playerSprite.getPlayerHealth();
     healthDisplay.textContent = playerHealth;
+
+    if (playerHealth <= 0){
+      const timing = Date.now();
+      playerSprite.setDead(timing);
+      playerSprite.setReady(false);
+
+      socket.emit("playerDead", 
+        JSON.stringify({
+          username: window.currentUser?.username,
+          deadtime: timing,
+        }))
+      // Stop the animation loop
+      renderer.setAnimationLoop(null);
+      
+      // Clean up the scene
+      scene.remove(playerSprite.getPlayerSprite());
+      if (playerSprite.getHasGun()) {
+        playerSprite.dropGun();
+      }
+      
+
+      // Show game over screen with jQuery animation
+      $("#game-over").fadeIn(500);
+    }
   }
 
   const ammoDisplay = document.getElementById("player-ammo");
