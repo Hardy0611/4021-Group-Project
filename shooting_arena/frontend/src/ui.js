@@ -69,6 +69,7 @@ const SignInForm = (function () {
     // Handle Game-over page when game ended
     socket.on("gameOver", (playerRank) => {
       //playerRank is a list of player object with all data you need, which sorted with dead time already
+      $("#game-over").fadeIn(500);
       console.log("GameOver debug:" , playerRank);
     });
 
@@ -145,6 +146,10 @@ const SignInForm = (function () {
     
     // Setup logout button functionality
     $("#logout-button").on("click", handleLogout);
+    $("#quitGame").on("click", handleLogout);
+    $("#playAgain").on("click", function(){
+      location.reload(); // reload the page
+    });
     
     // Check for existing session on page load
     Authentication.validate(
