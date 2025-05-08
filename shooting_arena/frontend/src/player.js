@@ -502,6 +502,14 @@ const PlayerSprite = function (username) {
     return player.freeze;
   };
 
+  function setFreeze() {
+    const originalspeed = player.speed;
+    player.speed = 0;
+    setTimeout(() => {
+      player.speed = originalspeed;
+    }, 2000)
+  }
+
   /**
    * PUBLIC API
    */
@@ -535,6 +543,7 @@ const PlayerSprite = function (username) {
     getAllState,
     playFreezeAnimation,
     getFreeze,
+    setFreeze,
   };
 };
 

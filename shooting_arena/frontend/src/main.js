@@ -163,7 +163,7 @@ function flashFreezeScreen() {
 
   setTimeout(() => {
     document.body.removeChild(overlay);
-  }, 200);
+  }, 2000);
 }
 
 // Cleanup function to remove player from scene
@@ -245,8 +245,14 @@ window.addEventListener("keyup", (e) => {
 Socket.onUpdateUsers((users) => {
   // Process each connected user
   Object.keys(users).forEach((username) => {
-    // Skip updating our own character
-    if (username === window.currentUser?.username) return;
+    // Skip updating our own character unless we go freeze
+    if (username === window.currentUser?.username){
+      if (users[username].freeze){
+        flashFreezeScreen();
+        playerSprite.setFreeze();
+      }
+      return;
+    }
 
     const userState = users[username];
 
@@ -448,11 +454,8 @@ function collectGuns() {
       return;
     }
   }
-}
+};
 
-function checkCheating() {
-
-}
 
 socket.on("updatePlayerGun", (data) => {
   const playerInfo = JSON.parse(data);

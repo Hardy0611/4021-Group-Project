@@ -302,7 +302,7 @@ io.on("connection", (socket) => {
         });
         io.emit("updateUser", JSON.stringify(onlineUsers));
       }
-    }, 800);
+    }, 400);
   });
 });
 
