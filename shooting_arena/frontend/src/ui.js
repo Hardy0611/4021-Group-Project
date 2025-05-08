@@ -35,6 +35,24 @@ const SignInForm = (function () {
       console.error("Socket not available!");
       return; // Exit the function if no socket
     }
+
+    // Emit an event to let the server know this user is in waiting room
+    socket.emit("enterWaitingRoom", user.username);
+
+    // Listen for waiting room status updates
+    socket.on("waitingRoomStatus", (data) => {
+      const status = JSON.parse(data);
+      
+      // If all users are in waiting room, enable ready button
+      if (status.allInWaitingRoom) {
+        $("#ready-button").prop("disabled", false);
+        $("#ready-button").text("READY");
+      } else {
+        // Some users aren't in waiting room yet
+        $("#ready-button").prop("disabled", true);
+        $("#ready-button").text(`Waiting for all players (${status.inWaitingRoom}/${status.total})`);
+      }
+    });
     
     $("#ready-button").on("click", function() {
       socket.emit("playerReady", user.username);
@@ -78,6 +96,21 @@ const SignInForm = (function () {
       //playerRank is a list of player object with all data you need, which sorted with dead time already
       console.log("someoneDead debug:" , playerRank);
     })
+
+    //handle play again button
+    $("#playAgain").off().on("click", function() {
+      $("#game-over").fadeOut(500);
+      $("#waiting-room").fadeIn(500);
+      
+      // Let server know we're back in the waiting room
+      socket.emit("enterWaitingRoom", user.username);
+      
+      // Reset ready button
+      $("#ready-button").data("isReady", false);
+      
+      // Reload the page to ensure clean game state
+      location.reload();
+    });
 
   };
   
@@ -147,9 +180,6 @@ const SignInForm = (function () {
     // Setup logout button functionality
     $("#logout-button").on("click", handleLogout);
     $("#quitGame").on("click", handleLogout);
-    $("#playAgain").on("click", function(){
-      location.reload(); // reload the page
-    });
     
     // Check for existing session on page load
     Authentication.validate(
