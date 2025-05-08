@@ -14,12 +14,12 @@ const usersFile = path.join(__dirname, "data/users.json");
 // Dynamic CORS configuration that accepts any origin but still works with credentials
 const corsConfig = {
   // This function dynamically sets the allowed origin to match the requesting origin
-  origin: function(origin, callback) {
+  origin: function (origin, callback) {
     callback(null, origin); // Allow any origin that makes a request
   },
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
-  allowedHeaders: ["Content-Type", "Authorization"]
+  allowedHeaders: ["Content-Type", "Authorization"],
 };
 
 const app = express();
@@ -39,7 +39,7 @@ app.use(cors(corsConfig));
 
 // Apply same CORS config to Socket.IO
 const io = new Server(httpServer, {
-  cors: corsConfig
+  cors: corsConfig,
 });
 
 // This helper function checks whether the text only contains word characters
@@ -153,6 +153,7 @@ io.on("connection", (socket) => {
       facing: "down",
       hitAnimation: false,
       ready: false,
+      freeze: false,
     };
     console.log(onlineUsers);
   }
@@ -181,17 +182,20 @@ io.on("connection", (socket) => {
 
   function checkAllUsersReady() {
     const allUsers = Object.values(onlineUsers);
-    const readyCount = allUsers.filter(user => user.ready).length;
+    const readyCount = allUsers.filter((user) => user.ready).length;
     const totalCount = allUsers.length;
-    
-    // Send waiting status to all clients
-    io.emit("waitingStatus", JSON.stringify({
-      ready: readyCount,
-      total: totalCount
-    }));
 
-    if (totalCount > 0 && readyCount === totalCount){
-      console.log("All players are ready")
+    // Send waiting status to all clients
+    io.emit(
+      "waitingStatus",
+      JSON.stringify({
+        ready: readyCount,
+        total: totalCount,
+      })
+    );
+
+    if (totalCount > 0 && readyCount === totalCount) {
+      console.log("All players are ready");
       io.emit("allReady");
     }
   }
@@ -277,6 +281,29 @@ io.on("connection", (socket) => {
         }
       }, 400);
     }
+  });
+
+  socket.on("freezeOtherUser", (data) => {
+    const notFreezeUsername = JSON.parse(data);
+    for (const username in onlineUsers) {
+      if (notFreezeUsername != username) {
+        onlineUsers[username].freeze = true;
+      }
+    }
+
+    io.emit("updateUser", JSON.stringify(onlineUsers));
+
+    // Remove Freeze
+    setTimeout(() => {
+      console.log("calling settimeout");
+      console.log(notFreezeUsername);
+      for (const username in onlineUsers) {
+        onlineUsers[username].freeze = false;
+      }
+      console.log("emitting");
+      console.log(onlineUsers);
+      io.emit("updateUser", JSON.stringify(onlineUsers));
+    }, 800);
   });
 });
 

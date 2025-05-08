@@ -52,6 +52,7 @@ const PlayerSprite = function (username) {
     gun: null,
     ammo: 0,
     isHit: false,
+    freeze: false,
   };
 
   /**
@@ -361,9 +362,9 @@ const PlayerSprite = function (username) {
     }
   };
 
-  const getAllState = function() {
+  const getAllState = function () {
     return player;
-  }
+  };
 
   // Handle player's gun
   const createGun = function (scene, gunInfo) {
@@ -470,6 +471,21 @@ const PlayerSprite = function (username) {
       }, 400); // Match this with the server-side timeout (400ms)
     }
   };
+
+  const playFreezeAnimation = function () {
+    if (player.sprite && player.sprite.material) {
+      player.sprite.material.color.set(0x0000ff);
+      player.freeze = true;
+    }
+  };
+
+  const playUnfreezeAnimation = function () {
+    if (player.sprite && player.sprite.material) {
+      player.sprite.material.color.set(0xffffff); // Back to white
+      player.freeze = false;
+    }
+  };
+
   const decreaseAmmo = function () {
     if (player.ammo <= 0) {
       player.hasGun = false;
@@ -479,6 +495,18 @@ const PlayerSprite = function (username) {
     } else if (player.hasGun) {
       player.ammo -= 1;
     }
+  };
+
+  const getFreeze = () => {
+    return player.freeze;
+  };
+
+  const gotFreeze = () => {
+    player.freeze = true;
+  };
+
+  const unFreeze = () => {
+    player.freeze = false;
   };
 
   /**
@@ -512,6 +540,11 @@ const PlayerSprite = function (username) {
     getAmmo,
     decreaseAmmo,
     getAllState,
+    playFreezeAnimation,
+    playUnfreezeAnimation,
+    getFreeze,
+    gotFreeze,
+    unFreeze,
   };
 };
 

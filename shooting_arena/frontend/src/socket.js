@@ -2,7 +2,7 @@ import { io } from "socket.io-client"; // Only if using a bundler like webpack/v
 
 const Socket = (function () {
   let socket = null;
-  
+
   const connect = (serverUrl, onConnected) => {
     if (!socket) {
       socket = io(serverUrl, {
@@ -14,14 +14,14 @@ const Socket = (function () {
       if (onConnected) onConnected();
     });
   };
-  
+
   const disconnect = function () {
     if (socket) {
       // Explicitly notify the server about user logout before disconnecting
       if (window.currentUser) {
         socket.emit("userLogout", window.currentUser.username);
       }
-      
+
       // Give the server a moment to process the logout event before disconnecting
       setTimeout(() => {
         socket.disconnect();
@@ -30,11 +30,11 @@ const Socket = (function () {
       }, 200);
     }
   };
-  
+
   const getSocket = function () {
     return socket;
   };
-  
+
   const onUpdateUsers = (callback) => {
     if (socket) {
       socket.on("updateUser", (data) => {
@@ -45,15 +45,21 @@ const Socket = (function () {
   };
 
   const gotHit = (callback) => {
-    if(socket) {
-      socket.on("hitPlayer", (data) =>{
+    if (socket) {
+      socket.on("hitPlayer", (data) => {
         const user = JSON.parse(data);
         callback(user);
-      } )
+      });
     }
-  }
+  };
 
-  return { connect, disconnect, getSocket, onUpdateUsers, gotHit };
+  return {
+    connect,
+    disconnect,
+    getSocket,
+    onUpdateUsers,
+    gotHit,
+  };
 })();
 
 export default Socket;
