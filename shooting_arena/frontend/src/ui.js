@@ -38,9 +38,23 @@ const SignInForm = (function () {
       return; // Exit the function if no socket
     }
     
-    $("#ready-button").on("click", function(){
+    $("#ready-button").on("click", function() {
       socket.emit("playerReady", user.username);
+      $(this).text("Waiting for others...").prop("disabled", true);
+      
+      // Add a ready state to track this user's status
+      $(this).data("isReady", true);
     });
+    
+    socket.on("waitingStatus", (data) => {
+      const status = JSON.parse(data);
+      
+      // Only update the text if this user has clicked the ready button
+      if ($("#ready-button").data("isReady")) {
+        $("#ready-button").text(`Waiting for ${status.ready} / ${status.total}`);
+      }
+    });
+
     
     socket.on("allReady", () => {
       $("#waiting-room").fadeOut(100);

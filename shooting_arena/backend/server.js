@@ -164,6 +164,8 @@ io.on("connection", (socket) => {
       console.log(`User ${username} logged out`);
       // Broadcast user list update to all clients
       io.emit("updateUser", JSON.stringify(onlineUsers));
+
+      checkAllUsersReady();
     }
   });
 
@@ -174,15 +176,25 @@ io.on("connection", (socket) => {
     console.log(`Player ${username} is ready`);
 
     // check if all users are ready
+    checkAllUsersReady();
+  });
+
+  function checkAllUsersReady() {
     const allUsers = Object.values(onlineUsers);
     const readyCount = allUsers.filter(user => user.ready).length;
     const totalCount = allUsers.length;
+    
+    // Send waiting status to all clients
+    io.emit("waitingStatus", JSON.stringify({
+      ready: readyCount,
+      total: totalCount
+    }));
 
     if (totalCount > 0 && readyCount === totalCount){
       console.log("All players are ready")
       io.emit("allReady");
     }
-  });
+  }
 
   // Handle user disconnection
   socket.on("disconnect", () => {
@@ -191,6 +203,8 @@ io.on("connection", (socket) => {
       console.log(onlineUsers);
       // Broadcast to all clients that a user has disconnected
       io.emit("updateUser", JSON.stringify(onlineUsers));
+      // let remain user load the game
+      checkAllUsersReady();
     }
   });
 
