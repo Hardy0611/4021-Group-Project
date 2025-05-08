@@ -477,13 +477,14 @@ const PlayerSprite = function (username) {
       player.sprite.material.color.set(0x0000ff);
       player.freeze = true;
     }
-  };
 
-  const playUnfreezeAnimation = function () {
-    if (player.sprite && player.sprite.material) {
-      player.sprite.material.color.set(0xffffff); // Back to white
-      player.freeze = false;
-    }
+    // Reset back to normal after animation duration
+    setTimeout(() => {
+      if (player.sprite && player.sprite.material) {
+        player.sprite.material.color.set(0xffffff); // Back to white
+        player.freeze = false;
+      }
+    }, 500); // Match this with the server-side timeout (400ms)
   };
 
   const decreaseAmmo = function () {
@@ -499,14 +500,6 @@ const PlayerSprite = function (username) {
 
   const getFreeze = () => {
     return player.freeze;
-  };
-
-  const gotFreeze = () => {
-    player.freeze = true;
-  };
-
-  const unFreeze = () => {
-    player.freeze = false;
   };
 
   /**
@@ -541,10 +534,7 @@ const PlayerSprite = function (username) {
     decreaseAmmo,
     getAllState,
     playFreezeAnimation,
-    playUnfreezeAnimation,
     getFreeze,
-    gotFreeze,
-    unFreeze,
   };
 };
 

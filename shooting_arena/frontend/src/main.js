@@ -160,11 +160,10 @@ function flashFreezeScreen() {
   overlay.style.pointerEvents = "none";
 
   document.body.appendChild(overlay);
-}
 
-function removeflashFreezeScreen() {
-  const overlay = document.getElementById("freezeOverlay");
-  document.body.removeChild(overlay);
+  setTimeout(() => {
+    document.body.removeChild(overlay);
+  }, 200);
 }
 
 // Cleanup function to remove player from scene
@@ -223,7 +222,7 @@ window.addEventListener("keydown", (e) => {
   } else if (e.key === "f") {
     socket.emit(
       "freezeOtherUser",
-      JSON.stringify(window.currentUser?.username)
+      JSON.stringify({username: window.currentUser?.username})
     );
   }
 });
@@ -247,19 +246,7 @@ Socket.onUpdateUsers((users) => {
   // Process each connected user
   Object.keys(users).forEach((username) => {
     // Skip updating our own character
-    if (username === window.currentUser?.username) {
-      if (users[username].freeze) {
-        console.log("user got freeze");
-        flashFreezeScreen();
-        playerSprite.gotFreeze();
-      } else if (playerSprite.getFreeze()) {
-        // TO DO CHANGE UNFREEZE
-        console.log("unfreeze user");
-        removeflashFreezeScreen();
-        playerSprite.unFreeze();
-      }
-      return;
-    }
+    if (username === window.currentUser?.username) return;
 
     const userState = users[username];
 
@@ -289,14 +276,9 @@ Socket.onUpdateUsers((users) => {
       otherPlayers[username].playHitAnimation();
     }
 
-    if (userState.freeze) {
-      console.log("Player got freeze");
+    if (userState.freeze && otherPlayers[username]) {
+      console.log(`${userState.username} got freeze`);
       otherPlayers[username].playFreezeAnimation();
-      otherPlayers[username].gotFreeze();
-    } else if (otherPlayers[username].getFreeze()) {
-      console.log("other player no freeze");
-      otherPlayers[username].playUnfreezeAnimation();
-      otherPlayers[username].unFreeze();
     }
 
     // Update existing player state
@@ -466,6 +448,10 @@ function collectGuns() {
       return;
     }
   }
+}
+
+function checkCheating() {
+
 }
 
 socket.on("updatePlayerGun", (data) => {

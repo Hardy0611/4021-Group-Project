@@ -285,24 +285,23 @@ io.on("connection", (socket) => {
 
   socket.on("freezeOtherUser", (data) => {
     const notFreezeUsername = JSON.parse(data);
-    for (const username in onlineUsers) {
-      if (notFreezeUsername != username) {
-        onlineUsers[username].freeze = true;
-      }
-    }
+    // Update freeze state for all users at once
+    Object.keys(onlineUsers).forEach(username => {
+      onlineUsers[username].freeze = (username !== notFreezeUsername.username);
+    });
 
+    console.log("player start freeze:", notFreezeUsername.username);
     io.emit("updateUser", JSON.stringify(onlineUsers));
 
     // Remove Freeze
     setTimeout(() => {
-      console.log("calling settimeout");
-      console.log(notFreezeUsername);
-      for (const username in onlineUsers) {
-        onlineUsers[username].freeze = false;
+      // Only update if users still exist
+      if (Object.keys(onlineUsers).length > 0) {
+        Object.keys(onlineUsers).forEach(username => {
+          onlineUsers[username].freeze = false;
+        });
+        io.emit("updateUser", JSON.stringify(onlineUsers));
       }
-      console.log("emitting");
-      console.log(onlineUsers);
-      io.emit("updateUser", JSON.stringify(onlineUsers));
     }, 800);
   });
 });
