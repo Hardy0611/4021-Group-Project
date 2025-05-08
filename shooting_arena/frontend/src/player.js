@@ -37,6 +37,7 @@ const PlayerSprite = function (username) {
   let boundingBox = null;
 
   const player = {
+    username: username,
     camera: null,
     position: new THREE.Vector3(0, 0, 20),
     map: null,
@@ -360,6 +361,10 @@ const PlayerSprite = function (username) {
     }
   };
 
+  const getAllState = function() {
+    return player;
+  }
+
   // Handle player's gun
   const createGun = function (scene, gunInfo) {
     player.gun = GunSprite();
@@ -506,6 +511,7 @@ const PlayerSprite = function (username) {
     playHitAnimation,
     getAmmo,
     decreaseAmmo,
+    getAllState,
   };
 };
 

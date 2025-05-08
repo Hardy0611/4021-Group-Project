@@ -45,20 +45,7 @@ socket.emit("getGun");
  */
 // Helper to get current player state
 function getPlayerState() {
-  const position = playerSprite.getPlayerPosition();
-  return {
-    username: window.currentUser?.username,
-    position: {
-      x: position.x,
-      y: position.y,
-      z: position.z,
-    },
-    sequence: playerSprite.getPlayerSequence(),
-    direction: playerSprite.getPlayerDirection(),
-    hasGun: playerSprite.getHasGun(),
-    health: playerSprite.getPlayerHealth(),
-    facing: playerSprite.getFacing(),
-  };
+  return playerSprite.getAllState();
 }
 
 // Handle bullet: create, animate, destroy

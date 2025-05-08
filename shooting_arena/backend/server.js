@@ -144,13 +144,13 @@ io.on("connection", (socket) => {
   if (user) {
     // init user states and store in onlineUsers
     onlineUsers[user.username] = {
-      name: user.username,
+      username: user.username,
       position: { x: 0, y: 1.5, z: 20 },
       sequence: null,
       direction: "idle",
-      facing: "down",
       hasGun: false,
-      health: 100,
+      health: 3,
+      facing: "down",
       hitAnimation: false,
       ready: false,
     };
