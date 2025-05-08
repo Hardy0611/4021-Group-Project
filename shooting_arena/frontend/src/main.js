@@ -4,6 +4,7 @@ import Map from "./map.js";
 import Socket from "./socket.js";
 import { GunSpriteArray } from "./gun.js";
 import BulletSprite from "./bullet.js";
+import { now } from "three/examples/jsm/libs/tween.module.js";
 
 /**
  * GAME INITIALIZATION
@@ -25,6 +26,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 // Create player character
 const playerSprite = PlayerSprite(window.currentUser?.username);
 playerSprite.createPlayer("asset/player1_sprite.png", scene, camera);
+playerSprite.setReady(true);
 
 // Create game map
 const map = Map();
@@ -238,7 +240,6 @@ Socket.onUpdateUsers((users) => {
     // Check if this player has the hit animation flag
     if (userState.hitAnimation && otherPlayers[username] && 
         otherPlayers[username].playHitAnimation) {
-      console.log("Playing hit animation for:", username);
       otherPlayers[username].playHitAnimation();
     }
 
@@ -311,6 +312,23 @@ function updatePlayerStatus() {
   if (healthDisplay) {
     const playerHealth = playerSprite.getPlayerHealth();
     healthDisplay.textContent = playerHealth;
+
+    if (playerHealth <= 0){
+      playerSprite.setDead(Date.now())
+
+      // Stop the animation loop
+      renderer.setAnimationLoop(null);
+      
+      // Clean up the scene
+      scene.remove(playerSprite.getPlayerSprite());
+      if (playerSprite.getHasGun()) {
+        playerSprite.dropGun();
+      }
+      playerSprite.setReady(false);
+
+      // Show game over screen with jQuery animation
+      $("#game-over").fadeIn(500);
+    }
   }
 
   const ammoDisplay = document.getElementById("player-ammo");

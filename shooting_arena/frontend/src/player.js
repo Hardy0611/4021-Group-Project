@@ -52,6 +52,9 @@ const PlayerSprite = function (username) {
     gun: null,
     ammo: 0,
     isHit: false,
+    ready: false,
+    inGame: false,
+    isdead: null,
   };
 
   /**
@@ -481,6 +484,15 @@ const PlayerSprite = function (username) {
     }
   };
 
+  const setReady = function(state){
+    player.ready = state;
+    player.inGame = state;
+  }
+
+  const setDead = function(time){
+    player.isdead = time;
+  }
+
   /**
    * PUBLIC API
    */
@@ -512,6 +524,8 @@ const PlayerSprite = function (username) {
     getAmmo,
     decreaseAmmo,
     getAllState,
+    setReady,
+    setDead
   };
 };
 

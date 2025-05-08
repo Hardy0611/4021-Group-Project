@@ -21,9 +21,6 @@ const SignInForm = (function () {
     // Connect to socket and load game
     Socket.connect("http://localhost:3000", () => {
       socket = Socket.getSocket();
-      // import("./main.js").then(() => {
-      //   console.log("Game module loaded");
-      // });
       showWaitingRoom(user);
     });
   };
@@ -51,7 +48,13 @@ const SignInForm = (function () {
       
       // Only update the text if this user has clicked the ready button
       if ($("#ready-button").data("isReady")) {
-        $("#ready-button").text(`Waiting for ${status.ready} / ${status.total}`);
+        if (status.inGame > 0){
+          $("#ready-button").text("Wait for next game").prop("disabled", true);
+        }
+        else{
+          $("#ready-button").text(`Waiting for ${status.ready} / ${status.total}`);
+        }
+        
       }
     });
 

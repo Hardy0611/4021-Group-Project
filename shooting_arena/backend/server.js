@@ -153,6 +153,8 @@ io.on("connection", (socket) => {
       facing: "down",
       hitAnimation: false,
       ready: false,
+      inGame: false,
+      isdead: null,
     };
     console.log(onlineUsers);
   }
@@ -183,14 +185,16 @@ io.on("connection", (socket) => {
     const allUsers = Object.values(onlineUsers);
     const readyCount = allUsers.filter(user => user.ready).length;
     const totalCount = allUsers.length;
+    const inGame = allUsers.filter(user => user.inGame).length
     
     // Send waiting status to all clients
     io.emit("waitingStatus", JSON.stringify({
       ready: readyCount,
-      total: totalCount
+      total: totalCount,
+      inGame: inGame
     }));
 
-    if (totalCount > 0 && readyCount === totalCount){
+    if (totalCount > 0 && readyCount === totalCount && inGame === 0){
       console.log("All players are ready")
       io.emit("allReady");
     }
