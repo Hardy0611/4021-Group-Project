@@ -71,6 +71,9 @@ const SignInForm = (function () {
 
     //Hide waiting room
     $("#waiting-room").hide();
+
+    //Hide leaderbroad
+    $("#game-over").hide();
     
     // Hide logout button initially
     $("#logout-button").hide();
