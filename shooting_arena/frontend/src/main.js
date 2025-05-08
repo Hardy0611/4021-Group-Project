@@ -225,6 +225,14 @@ Socket.onUpdateUsers((users) => {
       sprite.createPlayer("asset/player1_sprite.png", scene, camera);
       otherPlayers[username] = sprite;
       console.log("New player joined:", username);
+
+      // Add a ready flag and set it to false initially
+      otherPlayers[username].isReady = false;
+      
+      // Set a timeout to start animations after resources have loaded
+      setTimeout(() => {
+        otherPlayers[username].isReady = true;
+      }, 1000); // Give it 1 second to fully initialize
     }
 
     // Check if this player has the hit animation flag
@@ -363,8 +371,11 @@ function animate(now, collideObjects) {
   // Update animations
   playerSprite.updatePlayerAnimation(now);
   Object.values(otherPlayers).forEach((sprite) => {
-    sprite.updatePlayerAnimation(now);
-    sprite.updateGunPosition();
+    // only start update when other player fully loaded
+    if (sprite && sprite.isReady) {
+      sprite.updatePlayerAnimation(now);
+      sprite.updateGunPosition();
+    }
   });
   updateBulletAnimation();
 
