@@ -11,15 +11,19 @@ import Environment from "./environment.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const usersFile = path.join(__dirname, "data/users.json");
 
+// Dynamic CORS configuration that accepts any origin but still works with credentials
+const corsConfig = {
+  // This function dynamically sets the allowed origin to match the requesting origin
+  origin: function(origin, callback) {
+    callback(null, origin); // Allow any origin that makes a request
+  },
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization"]
+};
+
 const app = express();
 const httpServer = createServer(app);
-const io = new Server(httpServer, {
-  cors: {
-    origin: "*", // Allow all origins
-    methods: ["GET", "POST"],
-    credentials: true, // Allow cookies/session
-  },
-});
 
 const onlineUsers = {};
 
@@ -30,12 +34,13 @@ var bulletIDCounter = 0;
 // Middleware for parsing JSON
 app.use(express.json());
 
-app.use(
-  cors({
-    origin: true, // Allow all origins
-    credentials: true, // Allow cookies/session
-  })
-);
+// Apply CORS to Express
+app.use(cors(corsConfig));
+
+// Apply same CORS config to Socket.IO
+const io = new Server(httpServer, {
+  cors: corsConfig
+});
 
 // This helper function checks whether the text only contains word characters
 function containWordCharsOnly(text) {
@@ -147,11 +152,9 @@ io.on("connection", (socket) => {
       hasGun: false,
       health: 100,
       hitAnimation: false,
+      ready: false,
     };
     console.log(onlineUsers);
-
-    // Broadcast to all clients that a new user has connected
-    io.emit("updateUser", JSON.stringify(onlineUsers));
   }
 
   // Handle explicit user logout
@@ -161,6 +164,23 @@ io.on("connection", (socket) => {
       console.log(`User ${username} logged out`);
       // Broadcast user list update to all clients
       io.emit("updateUser", JSON.stringify(onlineUsers));
+    }
+  });
+
+  //Handle waiting room
+  socket.on("playerReady", (username) => {
+    // change the user ready state in onlineUsers
+    onlineUsers[username].ready = true;
+    console.log(`Player ${username} is ready`);
+
+    // check if all users are ready
+    const allUsers = Object.values(onlineUsers);
+    const readyCount = allUsers.filter(user => user.ready).length;
+    const totalCount = allUsers.length;
+
+    if (totalCount > 0 && readyCount === totalCount){
+      console.log("All players are ready")
+      io.emit("allReady");
     }
   });
 
@@ -175,7 +195,7 @@ io.on("connection", (socket) => {
   });
 
   // Handle update user movement
-  socket.on("updateUser", (data) => {
+  socket.on("uploadUser", (data) => {
     const userState = JSON.parse(data);
     onlineUsers[userState.username] = userState;
     io.emit("updateUser", JSON.stringify(onlineUsers));

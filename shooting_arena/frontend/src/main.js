@@ -185,6 +185,10 @@ const keys = {
 window.addEventListener("keydown", (e) => {
   if (keys.hasOwnProperty(e.key)) {
     playerSprite.move(keys[e.key]);
+    // Send updated state immediately after press
+    if (socket && window.currentUser) {
+      socket.emit("uploadUser", JSON.stringify(getPlayerState()));
+    }
   } else if (e.key === " ") {
     var direction = playerSprite.getPlayerFacingDirection();
     var position = playerSprite.getPlayerPosition();
@@ -211,7 +215,7 @@ window.addEventListener("keyup", (e) => {
 
     // Send updated state immediately after stopping
     if (socket && window.currentUser) {
-      socket.emit("updateUser", JSON.stringify(getPlayerState()));
+      socket.emit("uploadUser", JSON.stringify(getPlayerState()));
     }
   }
 });
@@ -424,7 +428,7 @@ renderer.setAnimationLoop((now) => {
 
   // Emit player state to server
   if (socket && window.currentUser) {
-    socket.emit("updateUser", JSON.stringify(getPlayerState()));
+    socket.emit("uploadUser", JSON.stringify(getPlayerState()));
   }
 });
 

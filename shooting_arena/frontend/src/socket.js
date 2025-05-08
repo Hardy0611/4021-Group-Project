@@ -5,14 +5,13 @@ const Socket = (function () {
   
   const connect = (serverUrl, onConnected) => {
     if (!socket) {
-      socket = io(serverUrl);
+      socket = io(serverUrl, {
+        withCredentials: true,
+      });
     }
     socket.on("connect", () => {
       console.log("Connected to server");
       if (onConnected) onConnected();
-    });
-    socket.on("disconnect", () => {
-      console.log("Disconnected from server");
     });
   };
   

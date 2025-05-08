@@ -2,6 +2,8 @@ import Authentication from "./authentication.js";
 import Registration from "./registration.js";
 import Socket from "./socket.js";
 
+let socket = null;
+
 const SignInForm = (function () {
   // This function will be called after successful login (both direct and session)
   const onLoginSuccess = function(user) {
@@ -14,19 +16,47 @@ const SignInForm = (function () {
     
     // Show logout button
     $("#logout-button").show();
+
     
     // Connect to socket and load game
     Socket.connect("http://localhost:3000", () => {
+      socket = Socket.getSocket();
+      // import("./main.js").then(() => {
+      //   console.log("Game module loaded");
+      // });
+      showWaitingRoom(user);
+    });
+  };
+
+  const showWaitingRoom = function(user){
+    $("#waiting-room").fadeIn(500);
+
+    console.log("User loggin:", user.username)
+    
+    if (!socket) {
+      console.error("Socket not available!");
+      return; // Exit the function if no socket
+    }
+    
+    $("#ready-button").on("click", function(){
+      socket.emit("playerReady", user.username);
+    });
+    
+    socket.on("allReady", () => {
+      $("#waiting-room").fadeOut(100);
       import("./main.js").then(() => {
         console.log("Game module loaded");
       });
     });
-  };
-
+  }
+  
   // This function initializes the UI
   const initialize = function () {
     // Hide signin overlay initially
     $("#signin-overlay").hide();
+
+    //Hide waiting room
+    $("#waiting-room").hide();
     
     // Hide logout button initially
     $("#logout-button").hide();
