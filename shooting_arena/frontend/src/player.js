@@ -130,6 +130,9 @@ const PlayerSprite = function (username) {
   const updatePlayerAnimation = function (time) {
     if (lastUpdate === 0) lastUpdate = time;
     if (lastUpdate === time || time - lastUpdate >= player.sequence.timing) {
+      if (!player.sequence) {
+        player.sequence = sequences.idleDown;
+      }
       index = (index + 1) % player.sequence.count;
       player.map.offset.x = index / horizontalTile;
       player.map.offset.y = player.sequence.uv.v;
@@ -364,9 +367,9 @@ const PlayerSprite = function (username) {
     }
   };
 
-  const getAllState = function() {
+  const getAllState = function () {
     return player;
-  }
+  };
 
   // Handle player's gun
   const createGun = function (scene, gunInfo) {
@@ -484,14 +487,14 @@ const PlayerSprite = function (username) {
     }
   };
 
-  const setReady = function(state){
+  const setReady = function (state) {
     player.ready = state;
     player.inGame = state;
-  }
+  };
 
-  const setDead = function(time){
+  const setDead = function (time) {
     player.isdead = time;
-  }
+  };
 
   /**
    * PUBLIC API
@@ -525,7 +528,7 @@ const PlayerSprite = function (username) {
     decreaseAmmo,
     getAllState,
     setReady,
-    setDead
+    setDead,
   };
 };
 

@@ -14,12 +14,12 @@ const usersFile = path.join(__dirname, "data/users.json");
 // Dynamic CORS configuration that accepts any origin but still works with credentials
 const corsConfig = {
   // This function dynamically sets the allowed origin to match the requesting origin
-  origin: function(origin, callback) {
+  origin: function (origin, callback) {
     callback(null, origin); // Allow any origin that makes a request
   },
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
-  allowedHeaders: ["Content-Type", "Authorization"]
+  allowedHeaders: ["Content-Type", "Authorization"],
 };
 
 const app = express();
@@ -40,7 +40,7 @@ app.use(cors(corsConfig));
 
 // Apply same CORS config to Socket.IO
 const io = new Server(httpServer, {
-  cors: corsConfig
+  cors: corsConfig,
 });
 
 // This helper function checks whether the text only contains word characters
@@ -178,7 +178,7 @@ io.on("connection", (socket) => {
     if (usersInWaitingRoom.size === Object.keys(onlineUsers).length) {
       onlineUsers[username].ready = true;
       console.log(`Player ${username} is ready`);
-      
+
       // Check if all users are ready
       checkAllUsersReady();
     }
@@ -186,19 +186,22 @@ io.on("connection", (socket) => {
 
   function checkAllUsersReady() {
     const allUsers = Object.values(onlineUsers);
-    const readyCount = allUsers.filter(user => user.ready).length;
+    const readyCount = allUsers.filter((user) => user.ready).length;
     const totalCount = allUsers.length;
-    const inGame = allUsers.filter(user => user.inGame).length
-    
-    // Send waiting status to all clients
-    io.emit("waitingStatus", JSON.stringify({
-      ready: readyCount,
-      total: totalCount,
-      inGame: inGame
-    }));
+    const inGame = allUsers.filter((user) => user.inGame).length;
 
-    if (totalCount > 0 && readyCount === totalCount && inGame === 0){
-      console.log("All players are ready")
+    // Send waiting status to all clients
+    io.emit(
+      "waitingStatus",
+      JSON.stringify({
+        ready: readyCount,
+        total: totalCount,
+        inGame: inGame,
+      })
+    );
+
+    if (totalCount > 0 && readyCount === totalCount && inGame === 0) {
+      console.log("All players are ready");
       usersInWaitingRoom.clear();
       io.emit("allReady");
     }
@@ -209,7 +212,7 @@ io.on("connection", (socket) => {
     if (user) {
       // Remove from waiting room tracking
       leaveWaitingRoom(user.username);
-      
+
       // Your existing disconnect code
       delete onlineUsers[user.username];
       io.emit("updateUser", JSON.stringify(onlineUsers));
@@ -291,7 +294,7 @@ io.on("connection", (socket) => {
   socket.on("playerDead", (data) => {
     const user = JSON.parse(data);
     const deadTime = user.deadtime;
-    console.log(`player ${user.username} is dead at ${deadTime}`)
+    console.log(`player ${user.username} is dead at ${deadTime}`);
 
     // Update user state to mark as dead
     if (onlineUsers[user.username]) {
@@ -299,12 +302,14 @@ io.on("connection", (socket) => {
     }
 
     // Check if game is over (only one player left alive)
-    const aliveUsers = Object.values(onlineUsers).filter(user => 
-      user.inGame === true && user.isdead === null
+    const aliveUsers = Object.values(onlineUsers).filter(
+      (user) => user.inGame === true && user.isdead === null
     );
 
     // Get all players who participated in the game
-    const gamePlayers = Object.values(onlineUsers).filter(player => player.inGame === true);
+    const gamePlayers = Object.values(onlineUsers).filter(
+      (player) => player.inGame === true
+    );
 
     // Sort players by their death time (null = still alive, comes first)
     const playerRank = gamePlayers.sort((a, b) => {
@@ -316,13 +321,11 @@ io.on("connection", (socket) => {
     console.log(playerRank.length);
     console.log("rankedPlayer:", playerRank);
 
-
-    console.log("aliveUsers No. :", aliveUsers.length)
-    if (aliveUsers.length <= 1){
+    console.log("aliveUsers No. :", aliveUsers.length);
+    if (aliveUsers.length <= 1) {
       io.emit("gameOver", playerRank);
-    }
-    else if (aliveUsers.length > 1){
-      io.emit("someoneDead", playerRank);
+    } else if (aliveUsers.length > 1) {
+      io.emit("someoneDead", { playerRank, currentUsername: user.username });
     }
   });
 
@@ -330,19 +333,23 @@ io.on("connection", (socket) => {
   socket.on("enterWaitingRoom", (username) => {
     // Mark this user as being in the waiting room
     usersInWaitingRoom.add(username);
-    
+
     // Check if all online users are in waiting room
     const allUsers = Object.keys(onlineUsers);
-    const allInWaitingRoom = allUsers.length === usersInWaitingRoom.size &&
-      allUsers.every(user => usersInWaitingRoom.has(user));
-    
+    const allInWaitingRoom =
+      allUsers.length === usersInWaitingRoom.size &&
+      allUsers.every((user) => usersInWaitingRoom.has(user));
+
     // Send status update to all clients
-    io.emit("waitingRoomStatus", JSON.stringify({
-      inWaitingRoom: usersInWaitingRoom.size,
-      total: allUsers.length,
-      allInWaitingRoom: allInWaitingRoom
-    }));
-    
+    io.emit(
+      "waitingRoomStatus",
+      JSON.stringify({
+        inWaitingRoom: usersInWaitingRoom.size,
+        total: allUsers.length,
+        allInWaitingRoom: allInWaitingRoom,
+      })
+    );
+
     // If all users are in waiting room, enable ready buttons
     if (allInWaitingRoom) {
       io.emit("enableReadyButtons");
@@ -353,17 +360,19 @@ io.on("connection", (socket) => {
   function leaveWaitingRoom(username) {
     if (usersInWaitingRoom.has(username)) {
       usersInWaitingRoom.delete(username);
-      
+
       // Update waiting room status
       const allUsers = Object.keys(onlineUsers);
-      io.emit("waitingRoomStatus", JSON.stringify({
-        inWaitingRoom: usersInWaitingRoom.size,
-        total: allUsers.length,
-        allInWaitingRoom: false
-      }));
+      io.emit(
+        "waitingRoomStatus",
+        JSON.stringify({
+          inWaitingRoom: usersInWaitingRoom.size,
+          total: allUsers.length,
+          allInWaitingRoom: false,
+        })
+      );
     }
   }
-
 });
 
 // serving the backend server

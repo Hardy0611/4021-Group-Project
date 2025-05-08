@@ -1,4 +1,8 @@
 {
+  "1": {
+    "username": "1",
+    "password": "$2b$10$UsNyA83UlBx6ac7ZOXCXu.nugMaJ6q/Nb5Y4IL2wGse21wP8xvApy"
+  },
   "test": {
     "username": "test",
     "password": "$2b$10$FCXJCCjaw1Of3XXiFFR.f.RL/2vrGSShZ3Pb.m1LEFAIZjrhCreii"

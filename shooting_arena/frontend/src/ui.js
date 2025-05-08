@@ -6,18 +6,17 @@ let socket = null;
 
 const SignInForm = (function () {
   // This function will be called after successful login (both direct and session)
-  const onLoginSuccess = function(user) {
+  const onLoginSuccess = function (user) {
     // Store user data
     window.currentUser = user;
     console.log("User authenticated:", user);
-    
+
     // Hide login form
     hide();
-    
+
     // Show logout button
     $("#logout-button").show();
 
-    
     // Connect to socket and load game
     Socket.connect("http://localhost:3000", () => {
       socket = Socket.getSocket();
@@ -25,12 +24,11 @@ const SignInForm = (function () {
     });
   };
 
-  const pageHandler = function(user){
-
+  const pageHandler = function (user) {
     // Handle waiting room
     $("#waiting-room").fadeIn(500);
-    console.log("User loggin:", user.username)
-    
+    console.log("User loggin:", user.username);
+
     if (!socket) {
       console.error("Socket not available!");
       return; // Exit the function if no socket
@@ -42,7 +40,7 @@ const SignInForm = (function () {
     // Listen for waiting room status updates
     socket.on("waitingRoomStatus", (data) => {
       const status = JSON.parse(data);
-      
+
       // If all users are in waiting room, enable ready button
       if (status.allInWaitingRoom) {
         $("#ready-button").prop("disabled", false);
@@ -50,30 +48,32 @@ const SignInForm = (function () {
       } else {
         // Some users aren't in waiting room yet
         $("#ready-button").prop("disabled", true);
-        $("#ready-button").text(`Waiting for all players (${status.inWaitingRoom}/${status.total})`);
+        $("#ready-button").text(
+          `Waiting for all players (${status.inWaitingRoom}/${status.total})`
+        );
       }
     });
-    
-    $("#ready-button").on("click", function() {
+
+    $("#ready-button").on("click", function () {
       socket.emit("playerReady", user.username);
       $(this).text("Waiting for others...").prop("disabled", true);
-      
+
       // Add a ready state to track this user's status
       $(this).data("isReady", true);
     });
-    
+
     socket.on("waitingStatus", (data) => {
       const status = JSON.parse(data);
-      
+
       // Only update the text if this user has clicked the ready button
       if ($("#ready-button").data("isReady")) {
-        if (status.inGame > 0){
+        if (status.inGame > 0) {
           $("#ready-button").text("Wait for next game").prop("disabled", true);
+        } else {
+          $("#ready-button").text(
+            `Waiting for ${status.ready} / ${status.total}`
+          );
         }
-        else{
-          $("#ready-button").text(`Waiting for ${status.ready} / ${status.total}`);
-        }
-        
       }
     });
 
@@ -88,32 +88,71 @@ const SignInForm = (function () {
     socket.on("gameOver", (playerRank) => {
       //playerRank is a list of player object with all data you need, which sorted with dead time already
       $("#game-over").fadeIn(500);
-      console.log("GameOver debug:" , playerRank);
+      const leaderboard = $("#leaderboard-result");
+      leaderboard.empty();
+      playerRank.forEach((player, idx) => {
+        leaderboard.append(
+          "<div class='flex w-full'><div class='w-1/2 flex justify-center items-center text-center'>" +
+            (idx + 1) +
+            "</div><div class='w-1/2 flex justify-center items-center text-center'>" +
+            player.username +
+            "</div></div>"
+        );
+      });
     });
 
     // Handle Game-over page when game not yet ended
-    socket.on("someoneDead", (playerRank) => {
+    socket.on("someoneDead", (data) => {
       //playerRank is a list of player object with all data you need, which sorted with dead time already
-      console.log("someoneDead debug:" , playerRank);
-    })
-
-    //handle play again button
-    $("#playAgain").off().on("click", function() {
-      $("#game-over").fadeOut(500);
-      $("#waiting-room").fadeIn(500);
-      
-      // Let server know we're back in the waiting room
-      socket.emit("enterWaitingRoom", user.username);
-      
-      // Reset ready button
-      $("#ready-button").data("isReady", false);
-      
-      // Reload the page to ensure clean game state
-      location.reload();
+      const playerRank = data.playerRank;
+      const currentUsername = data.currentUsername;
+      if (
+        window.currentUser &&
+        window.currentUser.username === currentUsername
+      ) {
+        $("#game-over").fadeIn(500);
+        const leaderboard = $("#leaderboard-result");
+        var knownRank = false;
+        playerRank.forEach((player, idx) => {
+          if (!knownRank && player.username !== currentUsername) {
+            leaderboard.append(
+              "<div class='flex w-full'><div class='w-1/2 flex justify-center items-center text-center'>-</div><div class='w-1/2 flex justify-center items-center text-center'>" +
+                player.username +
+                "</div></div>"
+            );
+          } else {
+            knownRank = true;
+            leaderboard.append(
+              "<div class='flex w-full'><div class='w-1/2 flex justify-center items-center text-center'>" +
+                (idx + 1) +
+                "</div><div class='w-1/2 flex justify-center items-center text-center'>" +
+                player.username +
+                "</div></div>"
+            );
+          }
+        });
+      }
+      console.log("someoneDead debug:", { playerRank, currentUsername });
     });
 
+    //handle play again button
+    $("#playAgain")
+      .off()
+      .on("click", function () {
+        $("#game-over").fadeOut(500);
+        $("#waiting-room").fadeIn(500);
+
+        // Let server know we're back in the waiting room
+        socket.emit("enterWaitingRoom", user.username);
+
+        // Reset ready button
+        $("#ready-button").data("isReady", false);
+
+        // Reload the page to ensure clean game state
+        location.reload();
+      });
   };
-  
+
   // This function initializes the UI
   const initialize = function () {
     // Hide signin overlay initially
@@ -124,7 +163,7 @@ const SignInForm = (function () {
 
     //Hide leaderbroad
     $("#game-over").hide();
-    
+
     // Hide logout button initially
     $("#logout-button").hide();
 
@@ -138,14 +177,9 @@ const SignInForm = (function () {
       const password = $("#signin-password").val().trim();
 
       // Send a signin request
-      Authentication.signin(
-        username,
-        password,
-        onLoginSuccess,
-        (error) => {
-          $("#signin-message").text(error);
-        }
-      );
+      Authentication.signin(username, password, onLoginSuccess, (error) => {
+        $("#signin-message").text(error);
+      });
     });
 
     // Submit event for the register form
@@ -176,45 +210,42 @@ const SignInForm = (function () {
         }
       );
     });
-    
+
     // Setup logout button functionality
     $("#logout-button").on("click", handleLogout);
     $("#quitGame").on("click", handleLogout);
-    
+
     // Check for existing session on page load
-    Authentication.validate(
-      onLoginSuccess,
-      () => {
-        // Show login form if no valid session
-        show();
-      }
-    );
+    Authentication.validate(onLoginSuccess, () => {
+      // Show login form if no valid session
+      show();
+    });
   };
 
   // Function to handle logout
-  const handleLogout = function() {
+  const handleLogout = function () {
     // Store username before logout for cleanup
     const username = window.currentUser?.username;
-    
+
     Authentication.signout(
       () => {
         // Hide logout button
         $("#logout-button").hide();
-        
+
         // Disconnect socket (will trigger userLogout event)
         Socket.disconnect();
-        
+
         // Manually clean up the current player if needed
         if (username && window.cleanupPlayer) {
           window.cleanupPlayer(username);
         }
-        
+
         // Reset current user
         window.currentUser = null;
-        
+
         // Show login form
         show();
-        
+
         // Reload the page to reset game state
         setTimeout(() => {
           location.reload();
