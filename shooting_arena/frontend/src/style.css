@@ -70,7 +70,7 @@ body {
 }
 
 /* Waiting Room */
-#instruction {
+#instruction, #leaderboard {
   width: 800;
   display: flex; /* flex */
   background-color: #fbeec4; /* bg-yellow-100 */
