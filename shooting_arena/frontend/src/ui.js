@@ -21,13 +21,14 @@ const SignInForm = (function () {
     // Connect to socket and load game
     Socket.connect("http://localhost:3000", () => {
       socket = Socket.getSocket();
-      showWaitingRoom(user);
+      pageHandler(user);
     });
   };
 
-  const showWaitingRoom = function(user){
-    $("#waiting-room").fadeIn(500);
+  const pageHandler = function(user){
 
+    // Handle waiting room
+    $("#waiting-room").fadeIn(500);
     console.log("User loggin:", user.username)
     
     if (!socket) {
@@ -58,14 +59,26 @@ const SignInForm = (function () {
       }
     });
 
-    
     socket.on("allReady", () => {
       $("#waiting-room").fadeOut(100);
       import("./main.js").then(() => {
         console.log("Game module loaded");
       });
     });
-  }
+
+    // Handle Game-over page when game ended
+    socket.on("gameOver", (playerRank) => {
+      //playerRank is a list of player object with all data you need, which sorted with dead time already
+      console.log("GameOver debug:" , playerRank);
+    });
+
+    // Handle Game-over page when game not yet ended
+    socket.on("someoneDead", (playerRank) => {
+      //playerRank is a list of player object with all data you need, which sorted with dead time already
+      console.log("someoneDead debug:" , playerRank);
+    })
+
+  };
   
   // This function initializes the UI
   const initialize = function () {

@@ -275,38 +275,6 @@ socket.on("addBullet", (data) => {
   bulletSpriteArray.push(bulletSprite);
 });
 
-/**
- * UI ELEMENTS
- */
-// Add coordinate display to screen
-// function addCoordinateIndicators() {
-//   const positionDisplay = document.createElement("div");
-//   positionDisplay.id = "position-display";
-//   positionDisplay.style.position = "absolute";
-//   positionDisplay.style.top = "10px";
-//   positionDisplay.style.left = "10px";
-//   positionDisplay.style.backgroundColor = "rgba(0, 0, 0, 0.7)";
-//   positionDisplay.style.color = "white";
-//   positionDisplay.style.padding = "10px";
-//   positionDisplay.style.fontFamily = "monospace";
-//   positionDisplay.style.fontSize = "16px";
-//   positionDisplay.style.borderRadius = "5px";
-//   document.body.appendChild(positionDisplay);
-// }
-// addCoordinateIndicators();
-
-// // Update the position display
-// function updatePositionDisplay() {
-//   const display = document.getElementById("position-display");
-//   const position = playerSprite.getPlayerPosition();
-//   if (display) {
-//     display.textContent = `Position:
-//     X: ${position.x.toFixed(2)}
-//     Y: ${position.y.toFixed(2)}
-//     Z: ${position.z.toFixed(2)}`;
-//   }
-// }
-
 function updatePlayerStatus() {
   const healthDisplay = document.getElementById("player-health");
   if (healthDisplay) {
@@ -314,8 +282,15 @@ function updatePlayerStatus() {
     healthDisplay.textContent = playerHealth;
 
     if (playerHealth <= 0){
-      playerSprite.setDead(Date.now())
+      const timing = Date.now();
+      playerSprite.setDead(timing);
+      playerSprite.setReady(false);
 
+      socket.emit("playerDead", 
+        JSON.stringify({
+          username: window.currentUser?.username,
+          deadtime: timing,
+        }))
       // Stop the animation loop
       renderer.setAnimationLoop(null);
       
@@ -324,7 +299,7 @@ function updatePlayerStatus() {
       if (playerSprite.getHasGun()) {
         playerSprite.dropGun();
       }
-      playerSprite.setReady(false);
+      
 
       // Show game over screen with jQuery animation
       $("#game-over").fadeIn(500);

@@ -282,6 +282,46 @@ io.on("connection", (socket) => {
       }, 400);
     }
   });
+
+  socket.on("playerDead", (data) => {
+    const user = JSON.parse(data);
+    const deadTime = user.deadtime;
+    console.log(`player ${user.username} is dead at ${deadTime}`)
+
+    // Update user state to mark as dead
+    if (onlineUsers[user.username]) {
+      onlineUsers[user.username].isdead = deadTime;
+    }
+
+    // Check if game is over (only one player left alive)
+    const aliveUsers = Object.values(onlineUsers).filter(user => 
+      user.inGame === true && user.isdead === null
+    );
+
+    // Get all players who participated in the game
+    const gamePlayers = Object.values(onlineUsers).filter(player => player.inGame === true);
+
+    // Sort players by their death time (null = still alive, comes first)
+    const playerRank = gamePlayers.sort((a, b) => {
+      if (a.isdead === null) return -1; // Alive players first
+      if (b.isdead === null) return 1;
+      return b.isdead - a.isdead; // Later death time = higher rank
+    });
+
+    console.log(playerRank.length);
+    console.log("rankedPlayer:", playerRank);
+
+
+    console.log("aliveUsers No. :", aliveUsers.length)
+    if (aliveUsers.length <= 1){
+      io.emit("gameOver", playerRank);
+    }
+    else if (aliveUsers.length > 1){
+      io.emit("someoneDead", playerRank);
+    }
+
+  });
+
 });
 
 // serving the backend server
