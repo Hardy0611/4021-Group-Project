@@ -490,7 +490,7 @@ const PlayerSprite = function (username) {
         player.sprite.material.color.set(0xffffff); // Back to white
         player.freeze = false;
       }
-    }, 500); // Match this with the server-side timeout (400ms)
+    }, 2000); // Match this with the server-side timeout (400ms)
   };
 
   const decreaseAmmo = function () {
