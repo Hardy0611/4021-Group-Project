@@ -298,6 +298,9 @@ Socket.onUpdateUsers((users) => {
     if (!users[username]) {
       cleanupPlayer(username);
     }
+    else if (users[username].isdead){ // isdead not null
+      cleanupPlayer(username);
+    }
   });
 });
 
