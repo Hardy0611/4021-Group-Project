@@ -91,15 +91,25 @@ const SignInForm = (function () {
       const leaderboard = $("#leaderboard-result");
       leaderboard.empty();
       playerRank.forEach((player, idx) => {
-        leaderboard.append(
-          "<div class='flex w-full'><div class='w-1/3 flex justify-center items-center text-center'>" +
-            (idx + 1) +
-            "</div><div class='w-1/3 flex justify-center items-center text-center'>" +
-            player.username +
-            "</div><div class='w-1/3 flex justify-center items-center text-center'>" +
-            new Date(player.isdead).toTimeString().split(" ")[0] +
-            "</div></div>"
-        );
+        if (player.isdead) {
+          leaderboard.append(
+            "<div class='flex w-full'><div class='w-1/3 flex justify-center items-center text-center'>" +
+              (idx + 1) +
+              "</div><div class='w-1/3 flex justify-center items-center text-center'>" +
+              player.username +
+              "</div><div class='w-1/3 flex justify-center items-center text-center'>" +
+              new Date(player.isdead).toTimeString().split(" ")[0] +
+              "</div></div>"
+          );
+        } else {
+          leaderboard.append(
+            "<div class='flex w-full'><div class='w-1/3 flex justify-center items-center text-center'>" +
+              (idx + 1) +
+              "</div><div class='w-1/3 flex justify-center items-center text-center'>" +
+              player.username +
+              "</div><div class='w-1/3 flex justify-center items-center text-center'>-</div></div>"
+          );
+        }
       });
     });
 
