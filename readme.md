@@ -32,18 +32,24 @@ cd shooting_area/backend
 node server.js
 ```
 
-### 4. Start the frontend (Vite dev server)
+### 4. Build and serve the frontend (production)
 
-Open a new terminal, then run:
+First, build the frontend:
 ```bash
-cd shooting_area/frontend
-npm run dev
+cd ../../shooting_area/frontend
+npm run build
+```
+
+Then, serve the built files on port 8000 (requires `serve`):
+```bash
+npm install -g serve
+serve -s dist -l 8000
 ```
 
 ### 5. Open your browser and go to
 
 ```
-http://localhost:5173
+http://localhost:8000
 ```
 
 **Note:**  
