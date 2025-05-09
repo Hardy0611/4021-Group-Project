@@ -509,10 +509,9 @@ const PlayerSprite = function (username) {
   };
 
   function setFreeze() {
-    const originalspeed = player.speed;
     player.speed = 0;
     setTimeout(() => {
-      player.speed = originalspeed;
+      player.speed = 0.15;
     }, 2000)
   }
   const setReady = function (state) {
