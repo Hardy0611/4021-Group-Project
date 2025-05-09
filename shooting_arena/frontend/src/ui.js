@@ -92,10 +92,12 @@ const SignInForm = (function () {
       leaderboard.empty();
       playerRank.forEach((player, idx) => {
         leaderboard.append(
-          "<div class='flex w-full'><div class='w-1/2 flex justify-center items-center text-center'>" +
+          "<div class='flex w-full'><div class='w-1/3 flex justify-center items-center text-center'>" +
             (idx + 1) +
-            "</div><div class='w-1/2 flex justify-center items-center text-center'>" +
+            "</div><div class='w-1/3 flex justify-center items-center text-center'>" +
             player.username +
+            "</div><div class='w-1/3 flex justify-center items-center text-center'>" +
+            new Date(player.isdead).toTimeString().split(" ")[0] +
             "</div></div>"
         );
       });
@@ -114,19 +116,22 @@ const SignInForm = (function () {
         const leaderboard = $("#leaderboard-result");
         var knownRank = false;
         playerRank.forEach((player, idx) => {
+          console.log(player);
           if (!knownRank && player.username !== currentUsername) {
             leaderboard.append(
-              "<div class='flex w-full'><div class='w-1/2 flex justify-center items-center text-center'>-</div><div class='w-1/2 flex justify-center items-center text-center'>" +
+              "<div class='flex w-full'><div class='w-1/3 flex justify-center items-center text-center'>-</div><div class='w-1/3 flex justify-center items-center text-center'>" +
                 player.username +
-                "</div></div>"
+                "</div><div class='w-1/3 flex justify-center items-center text-center'>-</div></div>"
             );
           } else {
             knownRank = true;
             leaderboard.append(
-              "<div class='flex w-full'><div class='w-1/2 flex justify-center items-center text-center'>" +
+              "<div class='flex w-full'><div class='w-1/3 flex justify-center items-center text-center'>" +
                 (idx + 1) +
-                "</div><div class='w-1/2 flex justify-center items-center text-center'>" +
+                "</div><div class='w-1/3 flex justify-center items-center text-center'>" +
                 player.username +
+                "</div><div class='w-1/3 flex justify-center items-center text-center'>" +
+                new Date(player.isdead).toTimeString().split(" ")[0] +
                 "</div></div>"
             );
           }
