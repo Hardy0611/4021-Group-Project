@@ -88,6 +88,7 @@ const SignInForm = (function () {
     socket.on("gameOver", (playerRank) => {
       //playerRank is a list of player object with all data you need, which sorted with dead time already
       $("#game-over").fadeIn(500);
+      $("#logout-button").hide();
       const leaderboard = $("#leaderboard-result");
       leaderboard.empty();
       playerRank.forEach((player, idx) => {
@@ -129,6 +130,7 @@ const SignInForm = (function () {
         window.currentUser.username === currentUsername
       ) {
         $("#game-over").fadeIn(500);
+        $("#logout-button").hide();
         const leaderboard = $("#leaderboard-result");
         var knownRank = false;
         playerRank.forEach((player, idx) => {
