@@ -52,6 +52,7 @@ const PlayerSprite = function (username) {
     gun: null,
     ammo: 0,
     isHit: false,
+    freeze: false,
     ready: false,
     inGame: false,
     isdead: null,
@@ -476,6 +477,22 @@ const PlayerSprite = function (username) {
       }, 400); // Match this with the server-side timeout (400ms)
     }
   };
+
+  const playFreezeAnimation = function () {
+    if (player.sprite && player.sprite.material) {
+      player.sprite.material.color.set(0x0000ff);
+      player.freeze = true;
+    }
+
+    // Reset back to normal after animation duration
+    setTimeout(() => {
+      if (player.sprite && player.sprite.material) {
+        player.sprite.material.color.set(0xffffff); // Back to white
+        player.freeze = false;
+      }
+    }, 2000); // Match this with the server-side timeout (400ms)
+  };
+
   const decreaseAmmo = function () {
     if (player.ammo <= 0) {
       player.hasGun = false;
@@ -487,6 +504,16 @@ const PlayerSprite = function (username) {
     }
   };
 
+  const getFreeze = () => {
+    return player.freeze;
+  };
+
+  function setFreeze() {
+    player.speed = 0;
+    setTimeout(() => {
+      player.speed = 0.15;
+    }, 2000)
+  }
   const setReady = function (state) {
     player.ready = state;
     player.inGame = state;
@@ -527,6 +554,9 @@ const PlayerSprite = function (username) {
     getAmmo,
     decreaseAmmo,
     getAllState,
+    playFreezeAnimation,
+    getFreeze,
+    setFreeze,
     setReady,
     setDead,
   };

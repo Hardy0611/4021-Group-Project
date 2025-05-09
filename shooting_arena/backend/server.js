@@ -154,6 +154,7 @@ io.on("connection", (socket) => {
       facing: "down",
       hitAnimation: false,
       ready: false,
+      freeze: false,
       inGame: false,
       isdead: null,
     };
@@ -291,6 +292,27 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on("freezeOtherUser", (data) => {
+    const notFreezeUsername = JSON.parse(data);
+    // Update freeze state for all users at once
+    Object.keys(onlineUsers).forEach(username => {
+      onlineUsers[username].freeze = (username !== notFreezeUsername.username);
+    });
+
+    console.log("player start freeze:", notFreezeUsername.username);
+    io.emit("updateUser", JSON.stringify(onlineUsers));
+
+    // Remove Freeze
+    setTimeout(() => {
+      // Only update if users still exist
+      if (Object.keys(onlineUsers).length > 0) {
+        Object.keys(onlineUsers).forEach(username => {
+          onlineUsers[username].freeze = false;
+        });
+        io.emit("updateUser", JSON.stringify(onlineUsers));
+      }
+    }, 400);
+  });
   socket.on("playerDead", (data) => {
     const user = JSON.parse(data);
     const deadTime = user.deadtime;

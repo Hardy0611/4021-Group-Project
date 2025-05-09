@@ -90,7 +90,6 @@ function updateBulletAnimation() {
 
     // Handle player hits
     if (hitPlayerStatus.currentUser) {
-
       // Show visual effects for being hit
       playerSprite.decreaseHealth();
 
@@ -103,7 +102,10 @@ function updateBulletAnimation() {
       // Remove the bullet
       bulletSpriteArray.splice(i, 1);
 
-      socket.emit("playerHit", JSON.stringify({hitPlayer: window.currentUser?.username}))
+      socket.emit(
+        "playerHit",
+        JSON.stringify({ hitPlayer: window.currentUser?.username })
+      );
     }
   }
 }
@@ -147,6 +149,25 @@ function flashScreen() {
   }, 200);
 }
 
+function flashFreezeScreen() {
+  const overlay = document.createElement("div");
+  overlay.id = "freezeOverlay";
+  overlay.style.position = "fixed";
+  overlay.style.top = "0";
+  overlay.style.left = "0";
+  overlay.style.width = "100%";
+  overlay.style.height = "100%";
+  overlay.style.backgroundColor = "rgba(0, 0, 255, 0.3)";
+  overlay.style.zIndex = "1000";
+  overlay.style.pointerEvents = "none";
+
+  document.body.appendChild(overlay);
+
+  setTimeout(() => {
+    document.body.removeChild(overlay);
+  }, 2000);
+}
+
 // Cleanup function to remove player from scene
 function cleanupPlayer(username) {
   if (otherPlayers[username]) {
@@ -172,6 +193,11 @@ const keys = {
 };
 
 window.addEventListener("keydown", (e) => {
+  // Player under freeze cannot move
+  if (playerSprite.getFreeze()) {
+    return;
+  }
+
   if (keys.hasOwnProperty(e.key)) {
     playerSprite.move(keys[e.key]);
     // Send updated state immediately after press
@@ -195,6 +221,11 @@ window.addEventListener("keydown", (e) => {
   } else if (e.key === "d") {
     // Drop the gun
     playerSprite.dropGun();
+  } else if (e.key === "f") {
+    socket.emit(
+      "freezeOtherUser",
+      JSON.stringify({username: window.currentUser?.username})
+    );
   }
 });
 
@@ -216,8 +247,14 @@ window.addEventListener("keyup", (e) => {
 Socket.onUpdateUsers((users) => {
   // Process each connected user
   Object.keys(users).forEach((username) => {
-    // Skip updating our own character
-    if (username === window.currentUser?.username) return;
+    // Skip updating our own character unless we go freeze
+    if (username === window.currentUser?.username){
+      if (users[username].freeze){
+        flashFreezeScreen();
+        playerSprite.setFreeze();
+      }
+      return;
+    }
 
     const userState = users[username];
 
@@ -230,7 +267,7 @@ Socket.onUpdateUsers((users) => {
 
       // Add a ready flag and set it to false initially
       otherPlayers[username].isReady = false;
-      
+
       // Set a timeout to start animations after resources have loaded
       setTimeout(() => {
         otherPlayers[username].isReady = true;
@@ -238,9 +275,18 @@ Socket.onUpdateUsers((users) => {
     }
 
     // Check if this player has the hit animation flag
-    if (userState.hitAnimation && otherPlayers[username] && 
-        otherPlayers[username].playHitAnimation) {
+    if (
+      userState.hitAnimation &&
+      otherPlayers[username] &&
+      otherPlayers[username].playHitAnimation
+    ) {
+      console.log("Playing hit animation for:", username);
       otherPlayers[username].playHitAnimation();
+    }
+
+    if (userState.freeze && otherPlayers[username]) {
+      console.log(`${userState.username} got freeze`);
+      otherPlayers[username].playFreezeAnimation();
     }
 
     // Update existing player state
@@ -402,7 +448,8 @@ function collectGuns() {
       return;
     }
   }
-}
+};
+
 
 socket.on("updatePlayerGun", (data) => {
   const playerInfo = JSON.parse(data);
