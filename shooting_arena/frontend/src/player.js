@@ -56,6 +56,7 @@ const PlayerSprite = function (username) {
     ready: false,
     inGame: false,
     isdead: null,
+    kills: 0
   };
 
   /**

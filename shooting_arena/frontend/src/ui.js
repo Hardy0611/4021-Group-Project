@@ -102,7 +102,7 @@ const SignInForm = (function () {
               new Date(player.isdead).toTimeString().split(" ")[0] +
               "</div><div class='w-1/4 flex justify-center items-center text-center'>" +
               // TO DO: to replace - with the number of kill
-              "-" +
+              player.kills +
               "</div></div>"
           );
         } else {
@@ -113,7 +113,7 @@ const SignInForm = (function () {
               player.username +
               "</div><div class='w-1/4 flex justify-center items-center text-center'>-</div><div class='w-1/4 flex justify-center items-center text-center'>" +
               // TO DO: to replace - with the number of kill
-              "-" +
+              player.kills +
               "</div></div>"
           );
         }
@@ -152,7 +152,7 @@ const SignInForm = (function () {
                 new Date(player.isdead).toTimeString().split(" ")[0] +
                 "</div><div class='w-1/4 flex justify-center items-center text-center'>" +
                 // TO DO: to replace - with the number of kill
-                "-" +
+                player.kills +
                 "</div></div>"
             );
           }

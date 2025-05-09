@@ -157,6 +157,7 @@ io.on("connection", (socket) => {
       freeze: false,
       inGame: false,
       isdead: null,
+      kills: 0
     };
     console.log(onlineUsers);
   }
