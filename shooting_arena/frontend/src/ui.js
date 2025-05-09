@@ -93,21 +93,27 @@ const SignInForm = (function () {
       playerRank.forEach((player, idx) => {
         if (player.isdead) {
           leaderboard.append(
-            "<div class='flex w-full'><div class='w-1/3 flex justify-center items-center text-center'>" +
+            "<div class='flex w-full'><div class='w-1/4 flex justify-center items-center text-center'>" +
               (idx + 1) +
-              "</div><div class='w-1/3 flex justify-center items-center text-center'>" +
+              "</div><div class='w-1/4 flex justify-center items-center text-center'>" +
               player.username +
-              "</div><div class='w-1/3 flex justify-center items-center text-center'>" +
+              "</div><div class='w-1/4 flex justify-center items-center text-center'>" +
               new Date(player.isdead).toTimeString().split(" ")[0] +
+              "</div><div class='w-1/4 flex justify-center items-center text-center'>" +
+              // TO DO: to replace - with the number of kill
+              "-" +
               "</div></div>"
           );
         } else {
           leaderboard.append(
-            "<div class='flex w-full'><div class='w-1/3 flex justify-center items-center text-center'>" +
+            "<div class='flex w-full'><div class='w-1/4 flex justify-center items-center text-center'>" +
               (idx + 1) +
-              "</div><div class='w-1/3 flex justify-center items-center text-center'>" +
+              "</div><div class='w-1/4 flex justify-center items-center text-center'>" +
               player.username +
-              "</div><div class='w-1/3 flex justify-center items-center text-center'>-</div></div>"
+              "</div><div class='w-1/4 flex justify-center items-center text-center'>-</div><div class='w-1/4 flex justify-center items-center text-center'>" +
+              // TO DO: to replace - with the number of kill
+              "-" +
+              "</div></div>"
           );
         }
       });
@@ -129,19 +135,22 @@ const SignInForm = (function () {
           console.log(player);
           if (!knownRank && player.username !== currentUsername) {
             leaderboard.append(
-              "<div class='flex w-full'><div class='w-1/3 flex justify-center items-center text-center'>-</div><div class='w-1/3 flex justify-center items-center text-center'>" +
+              "<div class='flex w-full'><div class='w-1/4 flex justify-center items-center text-center'>-</div><div class='w-1/4 flex justify-center items-center text-center'>" +
                 player.username +
-                "</div><div class='w-1/3 flex justify-center items-center text-center'>-</div></div>"
+                "</div><div class='w-1/4 flex justify-center items-center text-center'>-</div><div class='w-1/4 flex justify-center items-center text-center'>-</div></div>"
             );
           } else {
             knownRank = true;
             leaderboard.append(
-              "<div class='flex w-full'><div class='w-1/3 flex justify-center items-center text-center'>" +
+              "<div class='flex w-full'><div class='w-1/4 flex justify-center items-center text-center'>" +
                 (idx + 1) +
-                "</div><div class='w-1/3 flex justify-center items-center text-center'>" +
+                "</div><div class='w-1/4 flex justify-center items-center text-center'>" +
                 player.username +
-                "</div><div class='w-1/3 flex justify-center items-center text-center'>" +
+                "</div><div class='w-1/4 flex justify-center items-center text-center'>" +
                 new Date(player.isdead).toTimeString().split(" ")[0] +
+                "</div><div class='w-1/4 flex justify-center items-center text-center'>" +
+                // TO DO: to replace - with the number of kill
+                "-" +
                 "</div></div>"
             );
           }
