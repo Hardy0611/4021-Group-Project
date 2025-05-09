@@ -7,25 +7,51 @@
 - express (for hosting server)
 
 
-## Game Front Page
-1. Basic control button
-2. Single player Mode Button
-3. Multiplayer Mode Button
+## Game front page:
+- Game description and instructions
+- Player login /register page
+- Instruction
+- Waiting Room
+- Ready Button
+- Number of total players
+- Number of players who are ready
+- Waiting for the previous game end notice
 
+## Game play page:
+- Basic control instruction: 
+    - up: go front
+    - down: go back
+    - left: go left
+    - right: go right
+    - space: shooting
+    - f: cheat mode (freezing others)
+    - d: drop the gun
+- 2.5D Map with fix angle but background
+- changing while player moving
+- player remain health bar
+- player remain Ammo
+- weapons on ground (randomly placed)
+- bullets be shot 
+- players' character
+- Sounds effects
+    - shooting sounds
+    - BGM
+- Visual effects
+    -  got hit effect
+        - victim side effect
+        - shooter effect
+    - got frozon effect
+        - victim side effect
+        - cheater effect
+- Obstacle on map that block player movements and bullet 
 
-## Game play Page
-- player health bar
-- weapon 
-- bullets left
-- healing tool
-- aiming UI
+## Game over page:
+- Final Ranking of player
+- Kills count of player
+- Times of death of player
+- play again Button
+- Logout button
 
-
-
-## Game over Page
-- Ranking
-- kills count
-- times for survival 
-
-## Cheating
-- 0 damage cheat code
+## Cheating:
+- f key: freeze all other players for 2 seconds
+other players got frozen effect and can't move for 2 seconds.
