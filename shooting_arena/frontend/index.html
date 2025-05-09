@@ -128,6 +128,20 @@
         // Initialize the UI
         UI.initialize();
       });
+
+      // Load the audio
+      const clickSound = new Audio("sound/button_click.mp3");
+      const gameSound = new Audio("sound/background_music.mp3");
+
+      // Play game sound 
+      gameSound.loop = true; // Set to loop
+      gameSound.play(); // Start playing the music
+
+      // Play sound on button click
+      $(".submit-button").on("click", function() {
+          clickSound.currentTime = 0; // Reset sound to start
+          clickSound.play();
+      });
     </script>
   </body>
 </html>
