@@ -180,6 +180,18 @@ function cleanupPlayer(username) {
   }
 }
 
+function handleDeadPlayer(username) {
+  if (otherPlayers[username]) {
+    const sprite = otherPlayers[username].getPlayerSprite();
+    if (sprite) {
+      sprite.visible = false; // Hide the sprite instead of removing it
+    }
+    // Mark as dead but keep the object
+    otherPlayers[username].isDead = true;
+    console.log("Player marked as dead:", username);
+  }
+}
+
 window.cleanupPlayer = cleanupPlayer;
 
 /**
@@ -224,7 +236,7 @@ window.addEventListener("keydown", (e) => {
   } else if (e.key === "f") {
     socket.emit(
       "freezeOtherUser",
-      JSON.stringify({username: window.currentUser?.username})
+      JSON.stringify({ username: window.currentUser?.username })
     );
   }
 });
@@ -248,8 +260,8 @@ Socket.onUpdateUsers((users) => {
   // Process each connected user
   Object.keys(users).forEach((username) => {
     // Skip updating our own character unless we go freeze
-    if (username === window.currentUser?.username){
-      if (users[username].freeze){
+    if (username === window.currentUser?.username) {
+      if (users[username].freeze) {
         flashFreezeScreen();
         playerSprite.setFreeze();
       }
@@ -297,9 +309,9 @@ Socket.onUpdateUsers((users) => {
   Object.keys(otherPlayers).forEach((username) => {
     if (!users[username]) {
       cleanupPlayer(username);
-    }
-    else if (users[username].isdead){ // isdead not null
-      cleanupPlayer(username);
+    } else if (users[username].isdead && !otherPlayers[username].isDead) {
+      // Player is dead but not marked as dead yet
+      handleDeadPlayer(username);
     }
   });
 });
@@ -330,25 +342,26 @@ function updatePlayerStatus() {
     const playerHealth = playerSprite.getPlayerHealth();
     healthDisplay.textContent = playerHealth;
 
-    if (playerHealth <= 0){
+    if (playerHealth <= 0) {
       const timing = Date.now();
       playerSprite.setDead(timing);
       playerSprite.setReady(false);
 
-      socket.emit("playerDead", 
+      socket.emit(
+        "playerDead",
         JSON.stringify({
           username: window.currentUser?.username,
           deadtime: timing,
-        }))
+        })
+      );
       // Stop the animation loop
       renderer.setAnimationLoop(null);
-      
+
       // Clean up the scene
       scene.remove(playerSprite.getPlayerSprite());
       if (playerSprite.getHasGun()) {
         playerSprite.dropGun();
       }
-      
 
       // Show game over screen with jQuery animation
       $("#game-over").fadeIn(500);
@@ -451,8 +464,7 @@ function collectGuns() {
       return;
     }
   }
-};
-
+}
 
 socket.on("updatePlayerGun", (data) => {
   const playerInfo = JSON.parse(data);
