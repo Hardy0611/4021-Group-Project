@@ -295,8 +295,8 @@ io.on("connection", (socket) => {
   socket.on("freezeOtherUser", (data) => {
     const notFreezeUsername = JSON.parse(data);
     // Update freeze state for all users at once
-    Object.keys(onlineUsers).forEach(username => {
-      onlineUsers[username].freeze = (username !== notFreezeUsername.username);
+    Object.keys(onlineUsers).forEach((username) => {
+      onlineUsers[username].freeze = username !== notFreezeUsername.username;
     });
 
     console.log("player start freeze:", notFreezeUsername.username);
@@ -306,7 +306,7 @@ io.on("connection", (socket) => {
     setTimeout(() => {
       // Only update if users still exist
       if (Object.keys(onlineUsers).length > 0) {
-        Object.keys(onlineUsers).forEach(username => {
+        Object.keys(onlineUsers).forEach((username) => {
           onlineUsers[username].freeze = false;
         });
         io.emit("updateUser", JSON.stringify(onlineUsers));
@@ -329,9 +329,13 @@ io.on("connection", (socket) => {
     );
 
     // Get all players who participated in the game
+    console.log("onlineUsers length");
+    console.log(onlineUsers);
     const gamePlayers = Object.values(onlineUsers).filter(
       (player) => player.inGame === true
     );
+    console.log("gamePlayers length");
+    console.log(gamePlayers.length);
 
     // Sort players by their death time (null = still alive, comes first)
     const playerRank = gamePlayers.sort((a, b) => {
@@ -340,8 +344,8 @@ io.on("connection", (socket) => {
       return b.isdead - a.isdead; // Later death time = higher rank
     });
 
+    console.log("playerRank length");
     console.log(playerRank.length);
-    console.log("rankedPlayer:", playerRank);
 
     console.log("aliveUsers No. :", aliveUsers.length);
     if (aliveUsers.length <= 1) {
