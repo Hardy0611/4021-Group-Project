@@ -370,7 +370,11 @@ const PlayerSprite = function (username) {
   };
 
   const getAllState = function () {
-    return player;
+    const state = { ...player };
+    delete state.map;
+    delete state.camera
+    
+    return state;
   };
 
   // Handle player's gun
@@ -524,6 +528,10 @@ const PlayerSprite = function (username) {
     player.isdead = time;
   };
 
+  const updateKills = function(killCount) {
+    player.kills = killCount;
+  };
+
   /**
    * PUBLIC API
    */
@@ -560,6 +568,7 @@ const PlayerSprite = function (username) {
     setFreeze,
     setReady,
     setDead,
+    updateKills
   };
 };
 

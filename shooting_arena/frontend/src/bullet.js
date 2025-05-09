@@ -27,6 +27,7 @@ const BulletSprite = function () {
     initialZ: null,
     destroy: false,
     creationTime: null,
+    shooterUsername: null
   };
 
   /**
@@ -46,7 +47,8 @@ const BulletSprite = function () {
     z,
     direction,
     mapBB,
-    isLocalPlayer = false
+    isLocalPlayer = false,
+    shooterUsername = null
   ) {
     // Don't create if already destroyed
     if (bullet.destroy) return;
@@ -56,6 +58,9 @@ const BulletSprite = function () {
 
     // Flag to determine if this bullet came from current player
     bullet.isCurrentPlayerBullet = isLocalPlayer;
+
+    // Store shooter's username
+    bullet.shooterUsername = shooterUsername;
 
     // Play sound effect
     if (bulletShootAudio) {
@@ -190,6 +195,7 @@ const BulletSprite = function () {
         currentUser: false,
         hitOtherPlayer: false,
         otherPlayerUsername: null,
+        shooterUsername: null
       };
     }
 
@@ -201,6 +207,7 @@ const BulletSprite = function () {
         currentUser: false,
         hitOtherPlayer: false,
         otherPlayerUsername: null,
+        shooterUsername: null
       };
     }
 
@@ -238,6 +245,7 @@ const BulletSprite = function () {
         currentUser: false,
         hitOtherPlayer: false,
         otherPlayerUsername: null,
+        shooterUsername: null
       };
     }
 
@@ -253,6 +261,7 @@ const BulletSprite = function () {
         currentUser: true,
         hitOtherPlayer: false,
         otherPlayerUsername: null,
+        shooterUsername: bullet.shooterUsername
       };
     }
 
@@ -261,6 +270,7 @@ const BulletSprite = function () {
       currentUser: false,
       hitOtherPlayer: false,
       otherPlayerUsername: null,
+      shooterUsername: null
     };
   };
 
@@ -280,6 +290,11 @@ const BulletSprite = function () {
     return bullet.id;
   };
 
+  // Add getter for shooter username
+  const getShooterUsername = function() {
+    return bullet.shooterUsername;
+  };
+
   // Public API
   return {
     createBullet,
@@ -287,6 +302,7 @@ const BulletSprite = function () {
     moveBullet,
     isDestroy,
     getID,
+    getShooterUsername
   };
 };
 

@@ -37,6 +37,7 @@ const socket = Socket.getSocket();
 
 // Store other players' sprites
 const otherPlayers = {};
+let lastHitBy = null;
 
 // Initialize Gun for players
 const unarmGunArray = GunSpriteArray(scene);
@@ -92,6 +93,10 @@ function updateBulletAnimation() {
     if (hitPlayerStatus.currentUser) {
       // Show visual effects for being hit
       playerSprite.decreaseHealth();
+      
+      // Store who hit the player last
+      lastHitBy = hitPlayerStatus.shooterUsername;
+      console.log("Hit by:", lastHitBy);
 
       // Camera shake effect
       shakeCamera();
@@ -104,7 +109,10 @@ function updateBulletAnimation() {
 
       socket.emit(
         "playerHit",
-        JSON.stringify({ hitPlayer: window.currentUser?.username })
+        JSON.stringify({ 
+          hitPlayer: window.currentUser?.username,
+          shooterUsername: hitPlayerStatus.shooterUsername
+        })
       );
     }
   }
@@ -227,6 +235,7 @@ window.addEventListener("keydown", (e) => {
           direction,
           initialX: position.x,
           initialZ: position.z,
+          shooterUsername: window.currentUser?.username
         })
       );
     }
@@ -261,6 +270,12 @@ Socket.onUpdateUsers((users) => {
   Object.keys(users).forEach((username) => {
     // Skip updating our own character unless we go freeze
     if (username === window.currentUser?.username) {
+      //update the kills
+      if (playerSprite.getAllState().kills !== users[username].kills) {
+        console.log(`Your kills updated to: ${users[username].kills}`);
+        playerSprite.updateKills(users[username].kills);
+      }
+
       if (users[username].freeze) {
         flashFreezeScreen();
         playerSprite.setFreeze();
@@ -323,6 +338,8 @@ socket.on("addBullet", (data) => {
 
   // Check if this is the current player's bullet
   const isLocalBullet = bulletInfo.shooterID === socket.id;
+  // Get shooter username
+  const shooterUsername = bulletInfo.shooterUsername || window.currentUser?.username;
 
   bulletSprite.createBullet(
     bulletInfo.id,
@@ -331,7 +348,8 @@ socket.on("addBullet", (data) => {
     bulletInfo.initialZ,
     bulletInfo.direction,
     map.getBoundBoxArray(),
-    isLocalBullet // Pass the flag to identify local bullets
+    isLocalBullet, // Pass the flag to identify local bullets
+    shooterUsername // Pass shooter username
   );
   bulletSpriteArray.push(bulletSprite);
 });
@@ -352,6 +370,7 @@ function updatePlayerStatus() {
         JSON.stringify({
           username: window.currentUser?.username,
           deadtime: timing,
+          killedBy: lastHitBy // Add the killer's username
         })
       );
       // Stop the animation loop

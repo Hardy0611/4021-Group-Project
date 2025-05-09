@@ -225,7 +225,16 @@ io.on("connection", (socket) => {
   // Handle update user movement
   socket.on("uploadUser", (data) => {
     const userState = JSON.parse(data);
-    onlineUsers[userState.username] = userState;
+    
+    // Preserve server-side values that shouldn't be overwritten by client updates
+    const existingKills = onlineUsers[userState.username]?.kills || 0;
+    
+    // Update the user state but preserve the kill count
+    onlineUsers[userState.username] = {
+      ...userState,
+      kills: existingKills  // Keep the server's kill count
+    };
+    
     io.emit("updateUser", JSON.stringify(onlineUsers));
   });
 
@@ -256,7 +265,8 @@ io.on("connection", (socket) => {
     // Add shooter's ID to the bullet info
     const bulletData = {
       id: bulletID,
-      shooterID: socket.id, // Add this line
+      shooterID: socket.id,
+      shooterUsername: bulletInfo.shooterUsername, // Include the shooter's username
       direction: bulletInfo.direction,
       initialX: bulletInfo.initialX,
       initialZ: bulletInfo.initialZ,
@@ -269,8 +279,9 @@ io.on("connection", (socket) => {
   socket.on("playerHit", (data) => {
     const hitInfo = JSON.parse(data);
     const hitUsername = hitInfo.hitPlayer;
+    const shooterUsername = hitInfo.shooterUsername; // Add this to track who shot
 
-    console.log(`${hitUsername} got hit`);
+    console.log(`${hitUsername} got hit by ${shooterUsername}`);
 
     // Update user state to indicate hit animation should play
     if (onlineUsers[hitUsername]) {
@@ -279,6 +290,12 @@ io.on("connection", (socket) => {
 
       // Decrease player health
       onlineUsers[hitUsername].health -= 1;
+      
+      // If the shooter exists, increment their kill count when the hit player dies
+      if (shooterUsername && onlineUsers[shooterUsername] && onlineUsers[hitUsername].health <= 0) {
+        onlineUsers[shooterUsername].kills += 1;
+        console.log(`${shooterUsername} got a kill! Total kills: ${onlineUsers[shooterUsername].kills}`);
+      }
 
       // Broadcast the updated player state to all clients
       io.emit("updateUser", JSON.stringify(onlineUsers));
@@ -317,11 +334,14 @@ io.on("connection", (socket) => {
   socket.on("playerDead", (data) => {
     const user = JSON.parse(data);
     const deadTime = user.deadtime;
-    console.log(`player ${user.username} is dead at ${deadTime}`);
+    const killedBy = user.killedBy; // Add this to track killer
+    
+    console.log(`player ${user.username} is dead at ${deadTime}, killed by ${killedBy || "unknown"}`);
 
     // Update user state to mark as dead
     if (onlineUsers[user.username]) {
       onlineUsers[user.username].isdead = deadTime;
+      onlineUsers[user.username].killedBy = killedBy;
     }
 
     // Check if game is over (only one player left alive)
@@ -350,7 +370,11 @@ io.on("connection", (socket) => {
     if (aliveUsers.length <= 1) {
       io.emit("gameOver", playerRank);
     } else if (aliveUsers.length > 1) {
-      io.emit("someoneDead", { playerRank, currentUsername: user.username });
+      io.emit("someoneDead", { 
+        playerRank, 
+        currentUsername: user.username,
+        killedBy: killedBy
+      });
     }
   });
 
