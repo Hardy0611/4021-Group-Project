@@ -331,9 +331,7 @@ io.on("connection", (socket) => {
     // Get all players who participated in the game
     console.log("onlineUsers length");
     console.log(onlineUsers);
-    const gamePlayers = Object.values(onlineUsers).filter(
-      (player) => player.inGame === true
-    );
+    const gamePlayers = Object.values(onlineUsers);
     console.log("gamePlayers length");
     console.log(gamePlayers.length);
 
